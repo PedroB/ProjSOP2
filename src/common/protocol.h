@@ -10,4 +10,11 @@ enum {
   // TODO mais opcodes para cada operacao
 };
 
+typedef struct {
+    char op_code;
+    char req_pipe_path[MAX_PIPE_PATH_LENGTH];
+    char resp_pipe_path[MAX_PIPE_PATH_LENGTH];
+} sessionRqst;
+
+
 #endif // COMMON_PROTOCOL_H

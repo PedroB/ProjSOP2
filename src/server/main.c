@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <semaphore.h>
 
 #include "constants.h"
 #include "io.h"
@@ -20,8 +21,19 @@ struct SharedData {
   pthread_mutex_t directory_mutex;
 };
 
+sessionRqst buf[MAX_BUFFER_SIZE];
+int f_server;
+
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t n_current_backups_lock = PTHREAD_MUTEX_INITIALIZER;
+
+
+sem_t semEmpty;
+sem_t semFull;
+pthread_mutex_t mutexBuffer;
+;
+
+int prodptr=0, consptr=0, count=0;
 
 size_t active_backups = 0; // Number of active backups
 size_t max_backups;        // Maximum allowed simultaneous backups
@@ -57,6 +69,28 @@ static int entry_files(const char *dir, struct dirent *entry, char *in_path,
   strcpy(strrchr(out_path, '.'), ".out");
 
   return 0;
+}
+
+void *main_Thread(void *arg) {
+    sessionRqst sessionRQST;
+
+    while (1) {
+        ssize_t n = read(f_server, (void *)&sessionRQST, sizeof(sessionRQST));
+        if (n != sizeof(sessionRQST)) {
+            exit(1);
+        }
+
+        if (sessionRQST.op_code == '1') {
+            sem_wait(&semEmpty);
+            pthread_mutex_lock(&mutexBuffer);
+
+            memcpy(&buf[prodptr], &sessionRQST, sizeof(sessionRQST));
+            prodptr = (prodptr + 1) % MAX_BUFFER_SIZE;
+
+            pthread_mutex_unlock(&mutexBuffer);
+            sem_post(&semFull);
+        }
+    }
 }
 
 static int run_job(int in_fd, int out_fd, char *filename) {
@@ -334,6 +368,26 @@ int main(int argc, char **argv) {
     wait(NULL);
     active_backups--;
   }
+  pthread_mutex_init(&mutexBuffer, NULL);
+  sem_init(&semEmpty, 0, 10);
+  sem_init(&semFull, 0, 0);
+
+
+  pthread_t main_thread;
+  pthread_t client_thread[MAX_SESSION_COUNT];
+  if (pthread_create(&main_thread, NULL, main_Thread, NULL) != 0) {
+      fprintf(stderr, "Erro ao criar thread");
+      exit(EXIT_FAILURE);
+  }
+
+  for (int i = 0; i< MAX_SESSION_COUNT; i++){
+    if (pthread_create(&client_thread[i], NULL, client_Thread, &i) != 0) {
+      fprintf(stderr, "Erro ao criar thread");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  
 
   kvs_terminate();
 
