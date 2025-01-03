@@ -14,6 +14,7 @@
 #include "operations.h"
 #include "parser.h"
 #include "pthread.h"
+#include "common/protocol.h"
 
 struct SharedData {
   DIR *dir;
@@ -310,12 +311,13 @@ static void dispatch_threads(DIR *dir) {
 }
 
 int main(int argc, char **argv) {
-  if (argc < 4) {
+  if (argc < 5) {
     write_str(STDERR_FILENO, "Usage: ");
     write_str(STDERR_FILENO, argv[0]);
     write_str(STDERR_FILENO, " <jobs_dir>");
     write_str(STDERR_FILENO, " <max_threads>");
     write_str(STDERR_FILENO, " <max_backups> \n");
+    write_str(STDERR_FILENO, "<nome_do_FIFO_de_registo");
     return 1;
   }
 
@@ -368,23 +370,41 @@ int main(int argc, char **argv) {
     wait(NULL);
     active_backups--;
   }
+
+    unlink(argv[4]);
+    if (mkfifo (argv[4], 0777) < 0)
+    exit (1);
+
+  if ((f_server = open (argv[4], O_RDWR)) < 0) exit(1);
+
   pthread_mutex_init(&mutexBuffer, NULL);
   sem_init(&semEmpty, 0, 10);
   sem_init(&semFull, 0, 0);
 
 
   pthread_t main_thread;
-  pthread_t client_thread[MAX_SESSION_COUNT];
+  pthread_t manager_thread[MAX_SESSION_COUNT];
+  pthread_t notif_thread[MAX_SESSION_COUNT];
   if (pthread_create(&main_thread, NULL, main_Thread, NULL) != 0) {
       fprintf(stderr, "Erro ao criar thread");
       exit(EXIT_FAILURE);
   }
 
   for (int i = 0; i< MAX_SESSION_COUNT; i++){
-    if (pthread_create(&client_thread[i], NULL, client_Thread, &i) != 0) {
+    if (pthread_create(&manager_thread[i], NULL, manager_Thread, &i) != 0) {
       fprintf(stderr, "Erro ao criar thread");
       exit(EXIT_FAILURE);
     }
+    if (pthread_create(&notif_thread[i], NULL, notif_Thread, &i) != 0) {
+      fprintf(stderr, "Erro ao criar thread");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  pthread_join(main_thread, NULL);
+
+  for (int i = 0; i < MAX_SESSION_COUNT; i++){
+    pthread_join(manager_thread[i], NULL);
   }
 
   
