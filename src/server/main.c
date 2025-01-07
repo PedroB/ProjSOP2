@@ -82,16 +82,21 @@ void *main_Thread(void *arg) {
         }
 
         if (sessionRQST.op_code == '1') {
-            sem_wait(&semEmpty);
-            pthread_mutex_lock(&mutexBuffer);
+            sem_wait(&semEmpty); // Espera que haja espaço no buffer
+            sem_wait(&mutexBuffer); // Entra na seção crítica
 
-            memcpy(&buf[prodptr], &sessionRQST, sizeof(sessionRQST));
-            prodptr = (prodptr + 1) % MAX_BUFFER_SIZE;
-
-            pthread_mutex_unlock(&mutexBuffer);
-            sem_post(&semFull);
+            // Adiciona o item ao buffer
+            memcpy(&buf[count], &sessionRQST, sizeof(sessionRQST));
+            count++;
+            sem_post(&mutexBuffer); // Sai da seção crítica
+            sem_post(&semFull); // Indica que há um item disponível no buffer
         }
     }
+}
+
+
+void *manager_thread(void *){
+
 }
 
 static int run_job(int in_fd, int out_fd, char *filename) {
@@ -392,10 +397,6 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i< MAX_SESSION_COUNT; i++){
     if (pthread_create(&manager_thread[i], NULL, manager_Thread, &i) != 0) {
-      fprintf(stderr, "Erro ao criar thread");
-      exit(EXIT_FAILURE);
-    }
-    if (pthread_create(&notif_thread[i], NULL, notif_Thread, &i) != 0) {
       fprintf(stderr, "Erro ao criar thread");
       exit(EXIT_FAILURE);
     }

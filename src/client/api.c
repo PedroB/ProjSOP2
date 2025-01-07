@@ -5,7 +5,7 @@
 #include <sys/fcntl.h>
 #include <sys/_types/_ssize_t.h>
 
-char req_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], resp_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], notif_Pipe_Path[MAX_PIPE_PATH_LENGTH] + 1;
+char req_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], resp_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], notif_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1];
 
 int f_req, f_resp,f_notif, f_server, session_id;
 sessionRqst sessionRQST;
@@ -24,7 +24,7 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
 
   if (mkfifo(req_pipe_path, 0777) < 0) exit(1);
   if (mkfifo(resp_pipe_path, 0777) < 0) exit(1);
-  if (mkfifo(notif_pipe,0777) < 0) exit(1);
+  if (mkfifo(notif_pipe_path,0777) < 0) exit(1);
 
   if ((f_server = open(server_pipe_path, O_WRONLY)) < 0) exit(1);
 

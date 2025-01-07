@@ -11,6 +11,7 @@ enum {
 };
 
 typedef struct {
+    int session_id;
     char op_code;
     char req_pipe_path[MAX_PIPE_PATH_LENGTH];
     char resp_pipe_path[MAX_PIPE_PATH_LENGTH];
