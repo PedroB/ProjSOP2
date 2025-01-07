@@ -29,8 +29,8 @@ int main(int argc, char *argv[]) {
   strncat(resp_pipe_path, argv[1], strlen(argv[1]) * sizeof(char));
   strncat(notif_pipe_path, argv[1], strlen(argv[1]) * sizeof(char));
 
-  if(kvs_connect(req_pipe_path,resp_pipe_path,argv[2],notif_pipe_path,1)){
-    fprintf(stderr, "Failed to set up KVS\n");
+  if(kvs_connect(req_pipe_path,resp_pipe_path,argv[2],notif_pipe_path)){
+    fprintf(stderr, "Failed to connect to KVS\n");
     return 1;
   }
 

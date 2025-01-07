@@ -15,6 +15,7 @@
 #include "parser.h"
 #include "pthread.h"
 #include "common/protocol.h"
+#include "server/server_parser.h"
 
 struct SharedData {
   DIR *dir;
@@ -24,6 +25,7 @@ struct SharedData {
 
 sessionRqst buf[MAX_BUFFER_SIZE];
 int f_server;
+int session_num = 0;
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t n_current_backups_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -32,7 +34,7 @@ pthread_mutex_t n_current_backups_lock = PTHREAD_MUTEX_INITIALIZER;
 sem_t semEmpty;
 sem_t semFull;
 pthread_mutex_t mutexBuffer;
-;
+
 
 int prodptr=0, consptr=0, count=0;
 
@@ -81,14 +83,14 @@ void *main_Thread(void *arg) {
             exit(1);
         }
 
-        if (sessionRQST.op_code == '1') {
+        if (sessionRQST.result == '0') {
+            pthread_mutex_lock(&mutexBuffer);
             sem_wait(&semEmpty); // Espera que haja espaço no buffer
-            sem_wait(&mutexBuffer); // Entra na seção crítica
-
+           
             // Adiciona o item ao buffer
             memcpy(&buf[count], &sessionRQST, sizeof(sessionRQST));
             count++;
-            sem_post(&mutexBuffer); // Sai da seção crítica
+            pthread_mutex_unlock(&mutexBuffer); // Sai da seção crítica
             sem_post(&semFull); // Indica que há um item disponível no buffer
         }
     }
@@ -96,7 +98,57 @@ void *main_Thread(void *arg) {
 
 
 void *manager_thread(void *){
+  sessionRqst sessionRQST;
+  char req_pipe_path[MAX_BUFFER_SIZE+1], resp_pipe_path[MAX_BUFFER_SIZE+1], notif_pipe_path[MAX_BUFFER_SIZE+1];
+  int f_req, f_resp, f_notif;
 
+  pthread_mutex_lock(&mutexBuffer);
+  int session_id = session_num;
+  session_num++;
+  pthread_mutex_unlock(&mutexBuffer);
+
+
+  while(1){
+    pthread_mutex_lock(&mutexBuffer);
+    sem_wait(&semFull);
+    memcpy(&sessionRQST, &buf[count], sizeof(sessionRQST));
+    count--;
+    pthread_mutex_unlock(&mutexBuffer);
+    sem_post(&semEmpty);
+
+
+    memset(req_pipe_path,0,MAX_BUFFER_SIZE+1);
+    memset(resp_pipe_path,0,MAX_BUFFER_SIZE+1);
+    memset(notif_pipe_path,0,MAX_BUFFER_SIZE+1);
+    strncpy(req_pipe_path,sessionRQST.req_pipe_path,MAX_BUFFER_SIZE);
+    strncpy(resp_pipe_path,sessionRQST.resp_pipe_path,MAX_BUFFER_SIZE);
+    strncpy(notif_pipe_path,sessionRQST.notif_pipe_path,MAX_BUFFER_SIZE);
+
+    if ((f_resp = open (resp_pipe_path, O_WRONLY)) < 0) exit(1);
+
+    const char *message = "OP_CODE=1 | 1";
+    ssize_t n = write(f_resp, message, strlen(message)); // Write the string to the pipe
+    
+    if (n != (ssize_t)strlen(message)) {
+      exit(1);
+    }
+
+    if ((f_req = open (req_pipe_path, O_RDONLY)) < 0) exit(1);
+
+    int status;
+    int atending_client = 1;
+    while(atending_client){
+
+        switch(get_next(f_req)){
+          case CMD_DISCONNECT:
+              
+              //iterrar pela kvs e pela ista de notif pipes de cada chave
+              break;
+          case CMD_SUBSCRIBE:
+              
+        }
+  }
+}
 }
 
 static int run_job(int in_fd, int out_fd, char *filename) {
@@ -383,7 +435,7 @@ int main(int argc, char **argv) {
   if ((f_server = open (argv[4], O_RDWR)) < 0) exit(1);
 
   pthread_mutex_init(&mutexBuffer, NULL);
-  sem_init(&semEmpty, 0, 10);
+  sem_init(&semEmpty, 0, MAX_SESSION_COUNT);
   sem_init(&semFull, 0, 0);
 
 
@@ -396,7 +448,7 @@ int main(int argc, char **argv) {
   }
 
   for (int i = 0; i< MAX_SESSION_COUNT; i++){
-    if (pthread_create(&manager_thread[i], NULL, manager_Thread, &i) != 0) {
+    if (pthread_create(&manager_thread[i], NULL, manager_thread, &i) != 0) {
       fprintf(stderr, "Erro ao criar thread");
       exit(EXIT_FAILURE);
     }

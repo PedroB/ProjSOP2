@@ -10,9 +10,7 @@ char req_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], resp_Pipe_Path[MAX_PIPE_PATH_LENGT
 int f_req, f_resp,f_notif, f_server, session_id;
 sessionRqst sessionRQST;
 
-// int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
-//                 char const *server_pipe_path, char const *notif_pipe_path,
-//                 int *notif_pipe) {
+
 int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
                 char const *server_pipe_path, char const *notif_pipe_path){
   strncpy(req_Pipe_Path, req_pipe_path, MAX_PIPE_PATH_LENGTH + 1);
@@ -28,7 +26,7 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
 
   if ((f_server = open(server_pipe_path, O_WRONLY)) < 0) exit(1);
 
-  sessionRQST.op_code = '1';
+  sessionRQST.result = '0';
   memset(sessionRQST.req_pipe_path, 0, MAX_PIPE_PATH_LENGTH);
   memset(sessionRQST.resp_pipe_path, 0, MAX_PIPE_PATH_LENGTH);
   memset(sessionRQST.notif_pipe_path, 0, MAX_PIPE_PATH_LENGTH);
