@@ -67,14 +67,57 @@ int kvs_disconnect(void) {
   return 0;
 }
 
-int kvs_subscribe(const char *key) {
-  // send subscribe message to request pipe and wait for response in response
-  // pipe
+int kvs_subscribe_unsubscribe(const char *key, int mode) {
+  // send subscribe message to request pipe 
+    int f_req;
+    char result[MAX_STRING_SIZE];
+    const char *req_pipe_path = sessionRQST.req_pipe_path; 
+    const char *resp_pipe_path = sessionRQST.resp_pipe_path; // Response pipe path
+
+    if ((f_req = open(req_pipe_path, O_WRONLY)) < 0) exit (1);
+
+    // Prepare the message with format: "OP_CODE|key"
+    char msg[MAX_STRING_SIZE]; 
+    int msg_len = snprintf(msg, sizeof(msg), "%d|%s", mode, key);
+
+    if (msg_len < 0 || (size_t)msg_len >= sizeof(msg)) {
+        fprintf(stderr, "Error: message too large or formatting failed\n");
+        close(f_req);
+        return -1;
+    }
+    // Write the message to the request pipe
+    ssize_t n = write(f_req, msg, msg_len);
+    if (n != msg_len) {
+        perror("Error writing to request pipe");
+        close(f_req);
+        return -1;
+    }
+    close(f_req);
+
+   // and wait for response in response pipe
+  if ((f_resp = open(sessionRQST.resp_pipe_path, O_RDONLY)) < 0) exit(1);
+
+  char response[MAX_STRING_SIZE]; // Adjust size based on expected response length
+  ssize_t resp_len = read(f_resp, response, sizeof(response) - 1); // Leave space for null terminator
+  if (resp_len < 0) {
+      perror("Error reading from response pipe");
+      close(f_resp);
+      return -1;
+  }
+  response[resp_len] = '\0';
+
+  printf("%s\n", response);
+
   return 0;
 }
 
-int kvs_unsubscribe(const char *key) {
-  // send unsubscribe message to request pipe and wait for response in response
-  // pipe
-  return 0;
-}
+
+
+
+// int kvs_unsubscribe(const char *key) {
+//   // send unsubscribe message to request pipe and wait for response in response
+//   // pipe
+
+
+//   return 0;
+// }

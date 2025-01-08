@@ -116,7 +116,6 @@ void *manager_thread(void *){
     pthread_mutex_unlock(&mutexBuffer);
     sem_post(&semEmpty);
 
-
     memset(req_pipe_path,0,MAX_BUFFER_SIZE+1);
     memset(resp_pipe_path,0,MAX_BUFFER_SIZE+1);
     memset(notif_pipe_path,0,MAX_BUFFER_SIZE+1);
@@ -140,12 +139,21 @@ void *manager_thread(void *){
     while(atending_client){
 
         switch(get_next(f_req)){
+
+      
           case CMD_DISCONNECT:
-              
-              //iterrar pela kvs e pela ista de notif pipes de cada chave
+              execute_disconnect();
+              //iterar pela kvs e pela ista de notif pipes de cada chave
               break;
           case CMD_SUBSCRIBE:
+
+              execute_subscribe(resp_pipe_path, key);
+
+              break;
+          case CMD_UNSUBSCRIBE:
+              execute_unsubscribe(resp_pipe_path, key);
               
+              break;
         }
   }
 }

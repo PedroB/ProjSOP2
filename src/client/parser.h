@@ -5,6 +5,10 @@
 
 #include "src/common/constants.h"
 
+#define MAX_NUMBER_SUB 10
+#define MAX_KEY_CHARS 20
+#define SIZE_OF_RESPONSE 5
+
 enum Command {
   CMD_DISCONNECT,
   CMD_SUBSCRIBE,

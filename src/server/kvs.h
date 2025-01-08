@@ -4,11 +4,18 @@
 
 #include <pthread.h>
 #include <stddef.h>
+#include <constants.h>
+
+typedef struct NotifPipeNode {
+    char *notif_pipe;                   // The notification pipe string
+    struct NotifPipeNode *next;         // Pointer to the next node in the list
+} NotifPipeNode;
 
 typedef struct KeyNode {
-  char *key;
-  char *value;
-  struct KeyNode *next;
+    char *key;                          // Key string
+    char *value;                        // Value string
+    NotifPipeNode *notif_pipes_head;    // Head of the linked list for notification pipes
+    struct KeyNode *next;               // Pointer to the next KeyNode in the list
 } KeyNode;
 
 typedef struct HashTable {
