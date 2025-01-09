@@ -96,6 +96,34 @@ void *main_Thread(void *arg) {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+int write_to_named_pipe(const char *pipe_path, int op_code, int result) {
+    int f_pipe;
+
+    if ((f_pipe = open(pipe_path, O_WRONLY)) < 0) exit(1);
+
+    char msg[MAX_STRING_SIZE];
+    int msg_len = snprintf(msg, sizeof(msg), "%d|%s", op_code, key);
+
+    // Check if snprintf succeeded
+    if (msg_len < 0 || (size_t)msg_len >= sizeof(msg)) {
+        fprintf(stderr, "Error: message too large or formatting failed\n");
+        close(f_pipe);
+        return -1;
+    }
+
+    ssize_t n = write(f_pipe, msg, msg_len);
+    if (n != msg_len) {
+        perror("Error writing to named pipe");
+        close(f_pipe);
+        return -1;
+    }
+
+    close(f_pipe);
+
+    return 0;
+}
+
 
 void *manager_thread(void *){
   sessionRqst sessionRQST;
@@ -134,7 +162,7 @@ void *manager_thread(void *){
 
     if ((f_req = open (req_pipe_path, O_RDONLY)) < 0) exit(1);
 
-    int status;
+    int result;
     int atending_client = 1;
     while(atending_client){
 
@@ -147,11 +175,25 @@ void *manager_thread(void *){
               break;
           case CMD_SUBSCRIBE:
 
-              execute_subscribe(resp_pipe_path, key);
+              if(execute_subscribe(key, resp_pipe_path,) != 0){
+                result = 1;
+                n = write_to_named_pipe(f_resp,OP_CODE_SUBSCRIBE,result);
+                break;
+              }
+                result = 0;
+                n = write_to_named_pipe(f_resp,OP_CODE_SUBSCRIBE,result);
+                break;
 
               break;
           case CMD_UNSUBSCRIBE:
-              execute_unsubscribe(resp_pipe_path, key);
+              if(execute_unsubscribe(resp_pipe_path, key) != 0){
+                result = 1;
+                n = write_to_named_pipe(f_resp,OP_CODE_UNSUBSCRIBE,result);
+                break;
+              }
+                result = 0;
+                n = write_to_named_pipe(f_resp,OP_CODE_UNSUBSCRIBE,result);
+                break;
               
               break;
         }

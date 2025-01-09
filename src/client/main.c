@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
       break;
 
     case EOC:
-      // input should end in a disconnect, or it will loop here forever
+      kvs_disconnect();
       break;
     }
   }

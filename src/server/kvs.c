@@ -2,8 +2,10 @@
 
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "string.h"
+#include <sys/fcntl.h>
 
 extern char buf[MAX_BUFFER_SIZE]; // Reference to global variable from main.c
 extern 
@@ -129,161 +131,183 @@ void free_table(HashTable *ht) {
   free(ht);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-NotifPipeNode find_notif_pipe(NotifPipeNode head_node, const char *notif_pipe) {
+NotifPipeNode *find_notif_pipe(NotifPipeNode *head_node, const char *notif_pipe) {
+    if (!head_node || !notif_pipe) {
+        return NULL; // Retorna NULL se o head_node ou o notif_pipe forem inválidos
+    }
 
+    NotifPipeNode *current = head_node;
 
-  //give the sessionRQST.notif_pipe_head, finds the node that corresponds to that sessionRQST_pipe_path
-  // to later give to the remove_notif_pipe, so that it removes the specific node
+    // Iterar pela lista encadeada para localizar o pipe
+    while (current != NULL) {
+        if (strcmp(current->notif_pipe, notif_pipe) == 0) {
+            return current; // Retorna o nó se encontrar o pipe correspondente
+        }
+        current = current->next; // Avançar para o próximo nó
+    }
 
-  return node;
+    return NULL; // Retorna NULL se não encontrar o pipe
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-int add_notif_pipe(NotifPipeNode *node, const char *notif_pipe) {
-    if (!node || !notif_pipe) {
-        return -1; // Error: Invalid input
+
+int add_notif_pipe(NotifPipeNode **head_node, const char *notif_pipe) {
+    if (!head_node || !notif_pipe) {
+        return 1; // Erro: Entrada inválida
     }
 
-    // Create a new NotifPipeNode
+    // Criar um novo nó
     NotifPipeNode *new_node = malloc(sizeof(NotifPipeNode));
     if (!new_node) {
-        perror("Error allocating memory for NotifPipeNode");
         return -1;
     }
 
-    // Allocate and copy the notif_pipe string
+    // Alocar e copiar a string do pipe de notificação
     new_node->notif_pipe = strdup(notif_pipe);
     if (!new_node->notif_pipe) {
-        perror("Error allocating memory for notif_pipe string");
         free(new_node);
-        return -1;
+        return 1;
     }
 
-    // Insert the new node at the head of the list
-    new_node->next = node->notif_pipes_head;
-    node->notif_pipes_head = new_node;
+    // Inserir o novo nó no início da lista
+    new_node->next = *head_node;
+    *head_node = new_node;
 
-    return 0; // Success
+    return 0;
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////
-int remove_notif_pipe(NotifPipeNode *node, const char *notif_pipe) {
-    if (!node || !notif_pipe) {
-        return -1;
+int remove_notif_pipe(NotifPipeNode **head_node, const char *notif_pipe) {
+    if (!head_node || !notif_pipe) {
+        return 1; 
     }
 
-    NotifPipeNode *current = node->notif_pipes_head;
+    NotifPipeNode *current = *head_node;
     NotifPipeNode *previous = NULL;
 
+    // Iterar pela lista 
     while (current) {
         if (strcmp(current->notif_pipe, notif_pipe) == 0) {
-            // Match found: remove the node
+            // Pipe correspondente encontrado: remover o nó
             if (previous) {
-                previous->next = current->next;
+                previous->next = current->next; // Bypass do nó atual
             } else {
-                node->notif_pipes_head = current->next;
+                *head_node = current->next; // Atualizar a cabeça da lista
             }
 
+            // Liberar memória do nó removido
             free(current->notif_pipe);
             free(current);
-            return 0; 
+            return 0; // Sucesso
         }
 
-        // Move to the next node
+        // Avançar para o próximo nó
         previous = current;
         current = current->next;
     }
 
-    return -1;
+    return 1; // Pipe não encontrado
 }
-///////////////////////////////////////////////////////////////////////////////
-int write_to_named_pipe(const char *pipe_path, int op_code, const char *key) {
-    int f_pipe;
 
-    if ((f_pipe = open(pipe_path, O_WRONLY)) < 0) exit(1);
-
-    char msg[MAX_STRING_SIZE];
-    int msg_len = snprintf(msg, sizeof(msg), "%d|%s", op_code, key);
-
-    // Check if snprintf succeeded
-    if (msg_len < 0 || (size_t)msg_len >= sizeof(msg)) {
-        fprintf(stderr, "Error: message too large or formatting failed\n");
-        close(f_pipe);
-        return -1;
-    }
-
-    ssize_t n = write(f_pipe, msg, msg_len);
-    if (n != msg_len) {
-        perror("Error writing to named pipe");
-        close(f_pipe);
-        return -1;
-    }
-
-    close(f_pipe);
-
-    return 0;
-}
-///////////////////////////////////////////////////////////////////////////////
-int execute_subscribe(const char key) {
-
-  KeyNode *keyNode = ht->table[index];
-  KeyNode *previousNode;
-
-  while (keyNode != NULL) {
-    if (strcmp(keyNode->key, key) == 0) {
-     
-      notif_head = keyNode->notif_pipes_head;
-
-      NotifPipeNode node = find_notif_pipe(notif_head);
-      if(add_notif_pipe(node, notif_pipe) != 0) {
-        //error
-      };
-
-      return 0;
-    }
-    previousNode = keyNode;
-    keyNode = previousNode->next;
-  }
-
-  write_to_named_pipe(sessionRQST.resp_pipe_path, OP_CODE_SUBSCRIBE, key);
-
-  return 0;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
-int execute_unsubscribe() {
-
-  KeyNode *keyNode = ht->table[index];
-  KeyNode *previousNode;
-
-  while (keyNode != NULL) {
-    if (strcmp(keyNode->key, key) == 0) {
-     
-      notif_head = keyNode->notif_pipes_head;
-      KeyNode node = find_notif_pipe();
-
-      if(remove_notif_pipe(node, notif_pipe) != 0) {
-        //error
-      };
-
-      return 0;
+int execute_subscribe(const char *key, const char *notif_pipe, HashTable *ht) {
+    if (!key || !notif_pipe || !ht) {
+        fprintf(stderr, "Erro: Parâmetros inválidos.\n");
+        return 1;
     }
-    previousNode = keyNode;
-    keyNode = previousNode->next;
-  }
 
-  write_to_named_pipe(sessionRQST.resp_pipe_path, OP_CODE_UNSUBSCRIBE, key);
+    int index = hash(key); // Calcular o índice na tabela hash
+    KeyNode *keyNode = ht->table[index];
 
-  return 0;
+    // Buscar pela chave no hash table
+    while (keyNode != NULL) {
+        if (strcmp(keyNode->key, key) == 0) {
+            // Encontrou a chave, verifica se o pipe já está registrado
+            NotifPipeNode *notif_head = keyNode->notif_pipes_head;
+
+            // Adicionar o pipe à lista de notificação
+            if (add_notif_pipe(&keyNode->notif_pipes_head, notif_pipe) != 0) {
+               
+                return 1;
+            }
+
+            return 0;
+        }
+
+        keyNode = keyNode->next; // Avançar para o próximo KeyNode
+    }
+
+    return 1;
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+int execute_unsubscribe(const char *key, const char *notif_pipe, HashTable *ht) {
+    if (!key || !notif_pipe || !ht) {
+        fprintf(stderr, "Erro: Parâmetros inválidos.\n");
+        return 1;
+    }
+
+    int index = hash(key); // Calcular o índice na tabela hash
+    KeyNode *keyNode = ht->table[index];
+
+    // Percorrer a lista de KeyNode
+    while (keyNode != NULL) {
+        if (strcmp(keyNode->key, key) == 0) {
+            // Encontrou a chave, busca pelos pipes de notificação
+            NotifPipeNode *notif_head = keyNode->notif_pipes_head;
+
+            // Remover o pipe de notificação
+            if (remove_notif_pipe(&keyNode->notif_pipes_head, notif_pipe) != 0) {
+                return 1;
+            }
+
+            return 0;
+        }
+
+        keyNode = keyNode->next; // Avançar para o próximo KeyNode na lista
+    }
+
+
+    return 1;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////
-int execute_disconnect() {
+int execute_disconnect(const char *notif_pipe, HashTable *ht) {
+    if (!notif_pipe || !ht) {
+        fprintf(stderr, "Erro: Pipe de notificação ou tabela hash inválidos.\n");
+        return 1;
+    }
 
-  //the server's job is just to remove the client subscription (the notif pipe) in every key in the table it is in
+    // Iterar por todas as entradas na tabela hash
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        KeyNode *keyNode = ht->table[i];
 
-  //iterate through the kvs table and if the notif_pipe == keyNNotifPipeNode, then  remove_node 
+        // Iterar por cada KeyNode na lista 
+        while (keyNode != NULL) {
+            NotifPipeNode **current = &keyNode->notif_pipes_head;
 
+            // Iterar pela lista de NotifPipeNode
+            while (*current != NULL) {
+                if (strcmp((*current)->notif_pipe, notif_pipe) == 0) {
+                    // Pipe encontrado, remover o nó
+                    NotifPipeNode *to_remove = *current;
+                    *current = to_remove->next; // Atualizar o ponteiro para pular o nó
+                    free(to_remove->notif_pipe);
+                    free(to_remove);
+
+                    
+                } else {
+                    current = &((*current)->next); // Avançar para o próximo nó
+                }
+            }
+
+            keyNode = keyNode->next; // Avançar para o próximo KeyNode na lista
+        }
+    }
+
+    return 0;
 }

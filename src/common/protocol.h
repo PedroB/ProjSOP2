@@ -19,10 +19,8 @@ typedef struct {
     char req_pipe_path[MAX_PIPE_PATH_LENGTH];
     char resp_pipe_path[MAX_PIPE_PATH_LENGTH];
     char notif_pipe_path[MAX_PIPE_PATH_LENGTH];
+    char *key;
 } sessionRqst;
 
-typedef struct {
-    int session_id;
-} dcRqst;
 
 #endif // COMMON_PROTOCOL_H
