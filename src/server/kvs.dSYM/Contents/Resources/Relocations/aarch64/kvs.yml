@@ -1,49 +1,77 @@
 ---
 triple:          'arm64-apple-darwin'
-binary-path:     kvs
+binary-path:     'src/server/kvs'
 relocations:
-  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _filter_job_files, symObjAddr: 0x0, symBinAddr: 0x100000908, symSize: 0x7C }
-  - { offsetInCU: 0x3F, offset: 0x3F, size: 0x8, addend: 0x0, symName: _lock, symObjAddr: 0xE60, symBinAddr: 0x100008000, symSize: 0x0 }
-  - { offsetInCU: 0xAC, offset: 0xAC, size: 0x8, addend: 0x0, symName: _n_current_backups_lock, symObjAddr: 0xEA0, symBinAddr: 0x100008040, symSize: 0x0 }
-  - { offsetInCU: 0xC1, offset: 0xC1, size: 0x8, addend: 0x0, symName: _active_backups, symObjAddr: 0x30C0, symBinAddr: 0x100008080, symSize: 0x0 }
-  - { offsetInCU: 0xF3, offset: 0xF3, size: 0x8, addend: 0x0, symName: _jobs_directory, symObjAddr: 0x30C8, symBinAddr: 0x100008088, symSize: 0x0 }
-  - { offsetInCU: 0x10D, offset: 0x10D, size: 0x8, addend: 0x0, symName: _max_backups, symBinAddr: 0x100008090, symSize: 0x0 }
-  - { offsetInCU: 0x122, offset: 0x122, size: 0x8, addend: 0x0, symName: _max_threads, symBinAddr: 0x100008098, symSize: 0x0 }
-  - { offsetInCU: 0x203, offset: 0x203, size: 0x8, addend: 0x0, symName: _filter_job_files, symObjAddr: 0x0, symBinAddr: 0x100000908, symSize: 0x7C }
-  - { offsetInCU: 0x239, offset: 0x239, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x7C, symBinAddr: 0x100000984, symSize: 0x2D0 }
-  - { offsetInCU: 0x290, offset: 0x290, size: 0x8, addend: 0x0, symName: _dispatch_threads, symObjAddr: 0x34C, symBinAddr: 0x100000C54, symSize: 0x250 }
-  - { offsetInCU: 0x309, offset: 0x309, size: 0x8, addend: 0x0, symName: _get_file, symObjAddr: 0x59C, symBinAddr: 0x100000EA4, symSize: 0x304 }
-  - { offsetInCU: 0x3C3, offset: 0x3C3, size: 0x8, addend: 0x0, symName: _entry_files, symObjAddr: 0x8A0, symBinAddr: 0x1000011A8, symSize: 0x198 }
-  - { offsetInCU: 0x423, offset: 0x423, size: 0x8, addend: 0x0, symName: _run_job, symObjAddr: 0xA38, symBinAddr: 0x100001340, symSize: 0x400 }
-  - { offsetInCU: 0x26, offset: 0x66F, size: 0x8, addend: 0x0, symName: _kvs_init, symObjAddr: 0x0, symBinAddr: 0x100001768, symSize: 0x7C }
-  - { offsetInCU: 0x59, offset: 0x6A2, size: 0x8, addend: 0x0, symName: _kvs_table, symObjAddr: 0x2150, symBinAddr: 0x1000080A0, symSize: 0x0 }
-  - { offsetInCU: 0x126, offset: 0x76F, size: 0x8, addend: 0x0, symName: _kvs_init, symObjAddr: 0x0, symBinAddr: 0x100001768, symSize: 0x7C }
-  - { offsetInCU: 0x13F, offset: 0x788, size: 0x8, addend: 0x0, symName: _kvs_terminate, symObjAddr: 0x7C, symBinAddr: 0x1000017E4, symSize: 0x78 }
-  - { offsetInCU: 0x158, offset: 0x7A1, size: 0x8, addend: 0x0, symName: _kvs_write, symObjAddr: 0xF4, symBinAddr: 0x10000185C, symSize: 0x14C }
-  - { offsetInCU: 0x1B8, offset: 0x801, size: 0x8, addend: 0x0, symName: _kvs_read, symObjAddr: 0x240, symBinAddr: 0x1000019A8, symSize: 0x1E8 }
-  - { offsetInCU: 0x243, offset: 0x88C, size: 0x8, addend: 0x0, symName: _kvs_delete, symObjAddr: 0x428, symBinAddr: 0x100001B90, symSize: 0x1D4 }
-  - { offsetInCU: 0x2CD, offset: 0x916, size: 0x8, addend: 0x0, symName: _kvs_show, symObjAddr: 0x5FC, symBinAddr: 0x100001D64, symSize: 0x15C }
-  - { offsetInCU: 0x337, offset: 0x980, size: 0x8, addend: 0x0, symName: _kvs_backup, symObjAddr: 0x758, symBinAddr: 0x100001EC0, symSize: 0x2B0 }
-  - { offsetInCU: 0x41E, offset: 0xA67, size: 0x8, addend: 0x0, symName: _kvs_wait, symObjAddr: 0xA08, symBinAddr: 0x100002170, symSize: 0x3C }
-  - { offsetInCU: 0x450, offset: 0xA99, size: 0x8, addend: 0x0, symName: _delay_to_timespec, symObjAddr: 0xA44, symBinAddr: 0x1000021AC, symSize: 0x48 }
-  - { offsetInCU: 0x26, offset: 0xB65, size: 0x8, addend: 0x0, symName: _get_next, symObjAddr: 0x0, symBinAddr: 0x1000021F4, symSize: 0x494 }
-  - { offsetInCU: 0x91, offset: 0xBD0, size: 0x8, addend: 0x0, symName: _get_next, symObjAddr: 0x0, symBinAddr: 0x1000021F4, symSize: 0x494 }
-  - { offsetInCU: 0xC7, offset: 0xC06, size: 0x8, addend: 0x0, symName: _cleanup, symObjAddr: 0x5CC, symBinAddr: 0x1000027C0, symSize: 0x6C }
-  - { offsetInCU: 0xF9, offset: 0xC38, size: 0x8, addend: 0x0, symName: _parse_pair, symObjAddr: 0x638, symBinAddr: 0x10000282C, symSize: 0x94 }
-  - { offsetInCU: 0x13D, offset: 0xC7C, size: 0x8, addend: 0x0, symName: _read_string, symObjAddr: 0x6CC, symBinAddr: 0x1000028C0, symSize: 0x144 }
-  - { offsetInCU: 0x1B9, offset: 0xCF8, size: 0x8, addend: 0x0, symName: _parse_write, symObjAddr: 0x810, symBinAddr: 0x100002A04, symSize: 0x348 }
-  - { offsetInCU: 0x26E, offset: 0xDAD, size: 0x8, addend: 0x0, symName: _parse_read_delete, symObjAddr: 0xB58, symBinAddr: 0x100002D4C, symSize: 0x254 }
-  - { offsetInCU: 0x318, offset: 0xE57, size: 0x8, addend: 0x0, symName: _parse_wait, symObjAddr: 0xDAC, symBinAddr: 0x100002FA0, symSize: 0x140 }
-  - { offsetInCU: 0x36F, offset: 0xEAE, size: 0x8, addend: 0x0, symName: _read_uint, symObjAddr: 0xEEC, symBinAddr: 0x1000030E0, symSize: 0x160 }
-  - { offsetInCU: 0x26, offset: 0xFCC, size: 0x8, addend: 0x0, symName: _hash, symObjAddr: 0x0, symBinAddr: 0x100003240, symSize: 0xB0 }
-  - { offsetInCU: 0x33, offset: 0xFD9, size: 0x8, addend: 0x0, symName: _hash, symObjAddr: 0x0, symBinAddr: 0x100003240, symSize: 0xB0 }
-  - { offsetInCU: 0x69, offset: 0x100F, size: 0x8, addend: 0x0, symName: _create_hash_table, symObjAddr: 0xB0, symBinAddr: 0x1000032F0, symSize: 0xA0 }
-  - { offsetInCU: 0xAD, offset: 0x1053, size: 0x8, addend: 0x0, symName: _write_pair, symObjAddr: 0x150, symBinAddr: 0x100003390, symSize: 0x110 }
-  - { offsetInCU: 0x11B, offset: 0x10C1, size: 0x8, addend: 0x0, symName: _read_pair, symObjAddr: 0x260, symBinAddr: 0x1000034A0, symSize: 0xB4 }
-  - { offsetInCU: 0x189, offset: 0x112F, size: 0x8, addend: 0x0, symName: _delete_pair, symObjAddr: 0x314, symBinAddr: 0x100003554, symSize: 0x108 }
-  - { offsetInCU: 0x1E9, offset: 0x118F, size: 0x8, addend: 0x0, symName: _free_table, symObjAddr: 0x41C, symBinAddr: 0x10000365C, symSize: 0xC0 }
-  - { offsetInCU: 0x26, offset: 0x1320, size: 0x8, addend: 0x0, symName: _write_str, symObjAddr: 0x0, symBinAddr: 0x10000371C, symSize: 0xA8 }
-  - { offsetInCU: 0x5E, offset: 0x1358, size: 0x8, addend: 0x0, symName: _write_str, symObjAddr: 0x0, symBinAddr: 0x10000371C, symSize: 0xA8 }
-  - { offsetInCU: 0xC8, offset: 0x13C2, size: 0x8, addend: 0x0, symName: _write_uint, symObjAddr: 0xA8, symBinAddr: 0x1000037C4, symSize: 0x138 }
-  - { offsetInCU: 0x116, offset: 0x1410, size: 0x8, addend: 0x0, symName: _strn_memcpy, symObjAddr: 0x1E0, symBinAddr: 0x1000038FC, symSize: 0x4C }
+  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _filter_job_files, symObjAddr: 0x0, symBinAddr: 0x1000030A0, symSize: 0x7C }
+  - { offsetInCU: 0x3F, offset: 0x3F, size: 0x8, addend: 0x0, symName: _session_num, symObjAddr: 0x4668, symBinAddr: 0x10000C080, symSize: 0x0 }
+  - { offsetInCU: 0x5B, offset: 0x5B, size: 0x8, addend: 0x0, symName: _lock, symObjAddr: 0x16D8, symBinAddr: 0x10000C000, symSize: 0x0 }
+  - { offsetInCU: 0xC8, offset: 0xC8, size: 0x8, addend: 0x0, symName: _n_current_backups_lock, symObjAddr: 0x1718, symBinAddr: 0x10000C040, symSize: 0x0 }
+  - { offsetInCU: 0xDD, offset: 0xDD, size: 0x8, addend: 0x0, symName: _prodptr, symObjAddr: 0x466C, symBinAddr: 0x10000C084, symSize: 0x0 }
+  - { offsetInCU: 0xF2, offset: 0xF2, size: 0x8, addend: 0x0, symName: _consptr, symObjAddr: 0x4670, symBinAddr: 0x10000C088, symSize: 0x0 }
+  - { offsetInCU: 0x107, offset: 0x107, size: 0x8, addend: 0x0, symName: _count, symObjAddr: 0x4674, symBinAddr: 0x10000C08C, symSize: 0x0 }
+  - { offsetInCU: 0x11C, offset: 0x11C, size: 0x8, addend: 0x0, symName: _active_backups, symObjAddr: 0x4678, symBinAddr: 0x10000C090, symSize: 0x0 }
+  - { offsetInCU: 0x14E, offset: 0x14E, size: 0x8, addend: 0x0, symName: _jobs_directory, symObjAddr: 0x4680, symBinAddr: 0x10000C098, symSize: 0x0 }
+  - { offsetInCU: 0x168, offset: 0x168, size: 0x8, addend: 0x0, symName: _buf, symBinAddr: 0x10000C0A0, symSize: 0x0 }
+  - { offsetInCU: 0x1ED, offset: 0x1ED, size: 0x8, addend: 0x0, symName: _f_server, symBinAddr: 0x10000EAA0, symSize: 0x0 }
+  - { offsetInCU: 0x202, offset: 0x202, size: 0x8, addend: 0x0, symName: _semEmpty, symBinAddr: 0x10000EAF8, symSize: 0x0 }
+  - { offsetInCU: 0x222, offset: 0x222, size: 0x8, addend: 0x0, symName: _semFull, symBinAddr: 0x10000EAFC, symSize: 0x0 }
+  - { offsetInCU: 0x237, offset: 0x237, size: 0x8, addend: 0x0, symName: _mutexBuffer, symBinAddr: 0x10000EAB8, symSize: 0x0 }
+  - { offsetInCU: 0x24C, offset: 0x24C, size: 0x8, addend: 0x0, symName: _max_backups, symBinAddr: 0x10000EAA8, symSize: 0x0 }
+  - { offsetInCU: 0x261, offset: 0x261, size: 0x8, addend: 0x0, symName: _max_threads, symBinAddr: 0x10000EAB0, symSize: 0x0 }
+  - { offsetInCU: 0x351, offset: 0x351, size: 0x8, addend: 0x0, symName: _filter_job_files, symObjAddr: 0x0, symBinAddr: 0x1000030A0, symSize: 0x7C }
+  - { offsetInCU: 0x387, offset: 0x387, size: 0x8, addend: 0x0, symName: _main_Thread, symObjAddr: 0x7C, symBinAddr: 0x10000311C, symSize: 0xE0 }
+  - { offsetInCU: 0x3CB, offset: 0x3CB, size: 0x8, addend: 0x0, symName: _write_to_resp_pipe, symObjAddr: 0x15C, symBinAddr: 0x1000031FC, symSize: 0x158 }
+  - { offsetInCU: 0x439, offset: 0x439, size: 0x8, addend: 0x0, symName: _manager_thread, symObjAddr: 0x2B4, symBinAddr: 0x100003354, symSize: 0x440 }
+  - { offsetInCU: 0x515, offset: 0x515, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x6F4, symBinAddr: 0x100003794, symSize: 0x4D0 }
+  - { offsetInCU: 0x5C8, offset: 0x5C8, size: 0x8, addend: 0x0, symName: _dispatch_threads, symObjAddr: 0xBC4, symBinAddr: 0x100003C64, symSize: 0x250 }
+  - { offsetInCU: 0x646, offset: 0x646, size: 0x8, addend: 0x0, symName: _get_file, symObjAddr: 0xE14, symBinAddr: 0x100003EB4, symSize: 0x304 }
+  - { offsetInCU: 0x70B, offset: 0x70B, size: 0x8, addend: 0x0, symName: _entry_files, symObjAddr: 0x1118, symBinAddr: 0x1000041B8, symSize: 0x198 }
+  - { offsetInCU: 0x76B, offset: 0x76B, size: 0x8, addend: 0x0, symName: _run_job, symObjAddr: 0x12B0, symBinAddr: 0x100004350, symSize: 0x400 }
+  - { offsetInCU: 0x26, offset: 0x9D0, size: 0x8, addend: 0x0, symName: _kvs_init, symObjAddr: 0x0, symBinAddr: 0x100004778, symSize: 0x7C }
+  - { offsetInCU: 0x59, offset: 0xA03, size: 0x8, addend: 0x0, symName: _kvs_table, symObjAddr: 0x26A8, symBinAddr: 0x10000EB00, symSize: 0x0 }
+  - { offsetInCU: 0x176, offset: 0xB20, size: 0x8, addend: 0x0, symName: _kvs_init, symObjAddr: 0x0, symBinAddr: 0x100004778, symSize: 0x7C }
+  - { offsetInCU: 0x18F, offset: 0xB39, size: 0x8, addend: 0x0, symName: _kvs_terminate, symObjAddr: 0x7C, symBinAddr: 0x1000047F4, symSize: 0x78 }
+  - { offsetInCU: 0x1A8, offset: 0xB52, size: 0x8, addend: 0x0, symName: _kvs_write, symObjAddr: 0xF4, symBinAddr: 0x10000486C, symSize: 0x14C }
+  - { offsetInCU: 0x208, offset: 0xBB2, size: 0x8, addend: 0x0, symName: _kvs_read, symObjAddr: 0x240, symBinAddr: 0x1000049B8, symSize: 0x1E8 }
+  - { offsetInCU: 0x293, offset: 0xC3D, size: 0x8, addend: 0x0, symName: _kvs_delete, symObjAddr: 0x428, symBinAddr: 0x100004BA0, symSize: 0x1D4 }
+  - { offsetInCU: 0x31D, offset: 0xCC7, size: 0x8, addend: 0x0, symName: _kvs_show, symObjAddr: 0x5FC, symBinAddr: 0x100004D74, symSize: 0x15C }
+  - { offsetInCU: 0x387, offset: 0xD31, size: 0x8, addend: 0x0, symName: _kvs_backup, symObjAddr: 0x758, symBinAddr: 0x100004ED0, symSize: 0x2B0 }
+  - { offsetInCU: 0x46E, offset: 0xE18, size: 0x8, addend: 0x0, symName: _kvs_wait, symObjAddr: 0xA08, symBinAddr: 0x100005180, symSize: 0x3C }
+  - { offsetInCU: 0x4A0, offset: 0xE4A, size: 0x8, addend: 0x0, symName: _delay_to_timespec, symObjAddr: 0xA44, symBinAddr: 0x1000051BC, symSize: 0x48 }
+  - { offsetInCU: 0x4C8, offset: 0xE72, size: 0x8, addend: 0x0, symName: _kvs_subs_or_unsubs, symObjAddr: 0xA8C, symBinAddr: 0x100005204, symSize: 0x120 }
+  - { offsetInCU: 0x50C, offset: 0xEB6, size: 0x8, addend: 0x0, symName: _kvs_disconnect, symObjAddr: 0xBAC, symBinAddr: 0x100005324, symSize: 0xB4 }
+  - { offsetInCU: 0x26, offset: 0xF83, size: 0x8, addend: 0x0, symName: _hash, symObjAddr: 0x0, symBinAddr: 0x1000053D8, symSize: 0xB0 }
+  - { offsetInCU: 0x48, offset: 0xFA5, size: 0x8, addend: 0x0, symName: _hash, symObjAddr: 0x0, symBinAddr: 0x1000053D8, symSize: 0xB0 }
+  - { offsetInCU: 0x7E, offset: 0xFDB, size: 0x8, addend: 0x0, symName: _create_hash_table, symObjAddr: 0xB0, symBinAddr: 0x100005488, symSize: 0xA0 }
+  - { offsetInCU: 0xC2, offset: 0x101F, size: 0x8, addend: 0x0, symName: _write_to_notif_pipe, symObjAddr: 0x150, symBinAddr: 0x100005528, symSize: 0x1D8 }
+  - { offsetInCU: 0x13E, offset: 0x109B, size: 0x8, addend: 0x0, symName: _notify_all_pipes, symObjAddr: 0x328, symBinAddr: 0x100005700, symSize: 0xBC }
+  - { offsetInCU: 0x19A, offset: 0x10F7, size: 0x8, addend: 0x0, symName: _write_pair, symObjAddr: 0x3E4, symBinAddr: 0x1000057BC, symSize: 0x130 }
+  - { offsetInCU: 0x208, offset: 0x1165, size: 0x8, addend: 0x0, symName: _read_pair, symObjAddr: 0x514, symBinAddr: 0x1000058EC, symSize: 0xB4 }
+  - { offsetInCU: 0x276, offset: 0x11D3, size: 0x8, addend: 0x0, symName: _free_notif_pipes, symObjAddr: 0x5C8, symBinAddr: 0x1000059A0, symSize: 0x5C }
+  - { offsetInCU: 0x2C4, offset: 0x1221, size: 0x8, addend: 0x0, symName: _delete_pair, symObjAddr: 0x624, symBinAddr: 0x1000059FC, symSize: 0x134 }
+  - { offsetInCU: 0x324, offset: 0x1281, size: 0x8, addend: 0x0, symName: _free_table, symObjAddr: 0x758, symBinAddr: 0x100005B30, symSize: 0xC0 }
+  - { offsetInCU: 0x39C, offset: 0x12F9, size: 0x8, addend: 0x0, symName: _add_notif_pipe, symObjAddr: 0x818, symBinAddr: 0x100005BF0, symSize: 0xE0 }
+  - { offsetInCU: 0x3E0, offset: 0x133D, size: 0x8, addend: 0x0, symName: _remove_notif_pipe, symObjAddr: 0x8F8, symBinAddr: 0x100005CD0, symSize: 0x10C }
+  - { offsetInCU: 0x437, offset: 0x1394, size: 0x8, addend: 0x0, symName: _execute_subscribe, symObjAddr: 0xA04, symBinAddr: 0x100005DDC, symSize: 0x12C }
+  - { offsetInCU: 0x49D, offset: 0x13FA, size: 0x8, addend: 0x0, symName: _execute_unsubscribe, symObjAddr: 0xB30, symBinAddr: 0x100005F08, symSize: 0x12C }
+  - { offsetInCU: 0x503, offset: 0x1460, size: 0x8, addend: 0x0, symName: _execute_disconnect, symObjAddr: 0xC5C, symBinAddr: 0x100006034, symSize: 0x150 }
+  - { offsetInCU: 0x26, offset: 0x1686, size: 0x8, addend: 0x0, symName: _write_str, symObjAddr: 0x0, symBinAddr: 0x100006184, symSize: 0xA8 }
+  - { offsetInCU: 0x5E, offset: 0x16BE, size: 0x8, addend: 0x0, symName: _write_str, symObjAddr: 0x0, symBinAddr: 0x100006184, symSize: 0xA8 }
+  - { offsetInCU: 0xC8, offset: 0x1728, size: 0x8, addend: 0x0, symName: _write_uint, symObjAddr: 0xA8, symBinAddr: 0x10000622C, symSize: 0x138 }
+  - { offsetInCU: 0x116, offset: 0x1776, size: 0x8, addend: 0x0, symName: _strn_memcpy, symObjAddr: 0x1E0, symBinAddr: 0x100006364, symSize: 0x4C }
+  - { offsetInCU: 0x26, offset: 0x182D, size: 0x8, addend: 0x0, symName: _get_next, symObjAddr: 0x0, symBinAddr: 0x1000063B0, symSize: 0x494 }
+  - { offsetInCU: 0x91, offset: 0x1898, size: 0x8, addend: 0x0, symName: _get_next, symObjAddr: 0x0, symBinAddr: 0x1000063B0, symSize: 0x494 }
+  - { offsetInCU: 0xC7, offset: 0x18CE, size: 0x8, addend: 0x0, symName: _cleanup, symObjAddr: 0x5CC, symBinAddr: 0x10000697C, symSize: 0x6C }
+  - { offsetInCU: 0xF9, offset: 0x1900, size: 0x8, addend: 0x0, symName: _parse_pair, symObjAddr: 0x638, symBinAddr: 0x1000069E8, symSize: 0x94 }
+  - { offsetInCU: 0x13D, offset: 0x1944, size: 0x8, addend: 0x0, symName: _read_string, symObjAddr: 0x6CC, symBinAddr: 0x100006A7C, symSize: 0x144 }
+  - { offsetInCU: 0x1B9, offset: 0x19C0, size: 0x8, addend: 0x0, symName: _parse_write, symObjAddr: 0x810, symBinAddr: 0x100006BC0, symSize: 0x348 }
+  - { offsetInCU: 0x26E, offset: 0x1A75, size: 0x8, addend: 0x0, symName: _parse_read_delete, symObjAddr: 0xB58, symBinAddr: 0x100006F08, symSize: 0x254 }
+  - { offsetInCU: 0x318, offset: 0x1B1F, size: 0x8, addend: 0x0, symName: _parse_wait, symObjAddr: 0xDAC, symBinAddr: 0x10000715C, symSize: 0x140 }
+  - { offsetInCU: 0x36F, offset: 0x1B76, size: 0x8, addend: 0x0, symName: _read_uint, symObjAddr: 0xEEC, symBinAddr: 0x10000729C, symSize: 0x160 }
+  - { offsetInCU: 0x26, offset: 0x1C94, size: 0x8, addend: 0x0, symName: _read_all, symObjAddr: 0x0, symBinAddr: 0x1000073FC, symSize: 0x174 }
+  - { offsetInCU: 0x5B, offset: 0x1CC9, size: 0x8, addend: 0x0, symName: _read_all, symObjAddr: 0x0, symBinAddr: 0x1000073FC, symSize: 0x174 }
+  - { offsetInCU: 0xD7, offset: 0x1D45, size: 0x8, addend: 0x0, symName: _read_string, symObjAddr: 0x174, symBinAddr: 0x100007570, symSize: 0xD4 }
+  - { offsetInCU: 0x129, offset: 0x1D97, size: 0x8, addend: 0x0, symName: _write_all, symObjAddr: 0x248, symBinAddr: 0x100007644, symSize: 0xD4 }
+  - { offsetInCU: 0x197, offset: 0x1E05, size: 0x8, addend: 0x0, symName: _delay, symObjAddr: 0x31C, symBinAddr: 0x100007718, symSize: 0x3C }
+  - { offsetInCU: 0x1C9, offset: 0x1E37, size: 0x8, addend: 0x0, symName: _delay_to_timespec, symObjAddr: 0x358, symBinAddr: 0x100007754, symSize: 0x48 }
 ...

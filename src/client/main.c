@@ -4,11 +4,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
+
 
 #include "parser.h"
 #include "src/client/api.h"
 #include "src/common/constants.h"
 #include "src/common/io.h"
+#include "src/common/protocol.h"
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -23,7 +26,8 @@ int main(int argc, char *argv[]) {
 
   // char e[MAX_NUMBER_SUB][MAX_KEY_CHARS] = {0};
   unsigned int delay_ms;
-  size_t num;
+  
+  pthread_t read_thread;
 
   strncat(req_pipe_path, argv[1], strlen(argv[1]) * sizeof(char));
   strncat(resp_pipe_path, argv[1], strlen(argv[1]) * sizeof(char));
@@ -42,67 +46,70 @@ int main(int argc, char *argv[]) {
   }
 
 
-  while (1) {
+ while (1) {
+    char key[MAX_STRING_SIZE]; // Buffer para armazenar a chave lida
     switch (get_next(STDIN_FILENO)) {
     case CMD_DISCONNECT:
-      if (kvs_disconnect() != 0) {
-        fprintf(stderr, "Failed to disconnect to the server\n");
-        return 1;
-      }
-      // TODO: end notifications thread
-      printf("Disconnected from server\n");
-      return 0;
+        if (kvs_disconnect() != 0) {
+            fprintf(stderr, "Failed to disconnect from the server\n");
+            return 1;
+        }
+        // TODO: end notifications thread
+        printf("Disconnected from server\n");
+        return 0;
 
     case CMD_SUBSCRIBE:
-      // if (num == 0) {
-      //   fprintf(stderr, "Invalid command. See HELP for usage\n");
-      //   continue;
-      // }
+        // Ler a chave antes de executar a operação
+        if (parse_key(STDIN_FILENO, key, MAX_STRING_SIZE) == 1) {
+            fprintf(stderr, "Invalid key. See HELP for usage\n");
+            continue;
+        }
 
-      if (kvs_subscribe_unsubscribe(keys[0], OP_CODE_SUBSCRIBE)) {
-        fprintf(stderr, "Command subscribe failed\n");
-      }
+        if (kvs_subscribe_unsubscribe(key, OP_CODE_SUBSCRIBE) != 0) {
+            fprintf(stderr, "Command subscribe failed\n");
+        }
 
-      break;
+        break;
 
     case CMD_UNSUBSCRIBE:
-      num = parse_list(STDIN_FILENO, keys, 1, MAX_STRING_SIZE);
-      if (num == 0) {
-        fprintf(stderr, "Invalid command. See HELP for usage\n");
-        continue;
-      }
+        // Ler a chave antes de executar a operação
+        if (parse_key(STDIN_FILENO, key, MAX_STRING_SIZE) == -1) {
+            fprintf(stderr, "Invalid key. See HELP for usage\n");
+            continue;
+        }
 
-      if (kvs_subscribe_unsubscribe(keys[0], OP_CODE_UNSUBSCRIBE)) {
-        fprintf(stderr, "Command subscribe failed\n");
-      }
+        if (kvs_subscribe_unsubscribe(key, OP_CODE_UNSUBSCRIBE)) {
+            fprintf(stderr, "Command unsubscribe failed\n");
+        }
 
-      break;
+        break;
 
     case CMD_DELAY:
-      if (parse_delay(STDIN_FILENO, &delay_ms) == -1) {
-        fprintf(stderr, "Invalid command. See HELP for usage\n");
-        continue;
-      }
+        if (parse_delay(STDIN_FILENO, &delay_ms) == -1) {
+            fprintf(stderr, "Invalid delay value. See HELP for usage\n");
+            continue;
+        }
 
-      if (delay_ms > 0) {
-        printf("Waiting...\n");
-        delay(delay_ms);
-      }
-      break;
+        if (delay_ms > 0) {
+            printf("Waiting...\n");
+            delay(delay_ms);
+        }
+        break;
 
     case CMD_INVALID:
-      fprintf(stderr, "Invalid command. See HELP for usage\n");
-      break;
+        fprintf(stderr, "Invalid command. See HELP for usage\n");
+        break;
 
     case CMD_EMPTY:
-      break;
+        break;
 
     case EOC:
-      kvs_disconnect();
-      break;
+        kvs_disconnect();
+        break;
     }
-  }
+}
 
-  pthread_join(read_Thread, NULL);
+
+  
 
 }

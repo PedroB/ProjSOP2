@@ -2,8 +2,17 @@
 
 #include "src/common/constants.h"
 #include "src/common/protocol.h"
+#include "src/common/io.h"
 #include <sys/fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include <string.h>
 #include <sys/_types/_ssize_t.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 
 char req_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], resp_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], notif_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1];
 
@@ -43,8 +52,27 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
   return 0;
 }
 
+void read_response() {
+
+  // read response in response pipe
+    if ((f_resp = open(sessionRQST.resp_pipe_path, O_RDONLY)) < 0) exit(1);
+
+
+  char response[MAX_STRING_SIZE]; // Adjust size based on expected response length
+  ssize_t resp_len = read_all(f_resp, response, sizeof(response) - 1, NULL); // Leave space for null terminator
+  if (resp_len < 0) {
+      perror("Error reading from response pipe");
+      close(f_resp);
+
+  }
+  response[resp_len] = '\0';
+
+	printf("Server returned %c for operation: %c", response[1], response[0]);
+  close(f_resp);
+}
+
 int kvs_disconnect(void) {
-  dcRqst dcRQST;
+  sessionRqst dcRQST;
 
   size_t msgSize = 1 + sizeof(dcRQST);
   char *msg = malloc(msgSize);
@@ -70,10 +98,11 @@ int kvs_disconnect(void) {
   return 0;
 }
 
+
+
 int kvs_subscribe_unsubscribe(const char *key, int mode) {
   // send subscribe message to request pipe 
-    int f_req;
-    char result[MAX_STRING_SIZE];
+
     const char *req_pipe_path = sessionRQST.req_pipe_path; 
     const char *resp_pipe_path = sessionRQST.resp_pipe_path; // Response pipe path
 
@@ -84,16 +113,16 @@ int kvs_subscribe_unsubscribe(const char *key, int mode) {
     int msg_len = snprintf(msg, sizeof(msg), "%d|%s", mode, key);
 
     if (msg_len < 0 || (size_t)msg_len >= sizeof(msg)) {
-        fprintf(stderr, "Error: message too large or formatting failed\n");
+        
         close(f_req);
-        return -1;
+        return 1;
     }
     // Write the message to the request pipe
-    ssize_t n = write_all(f_req, msg, msg_len);
+    ssize_t n = write_all(f_req, msg,(size_t) msg_len);
     if (n != msg_len) {
-        perror("Error writing to request pipe");
+
         close(f_req);
-        return -1;
+        return 1;
     }
     close(f_req);
 
@@ -101,31 +130,13 @@ int kvs_subscribe_unsubscribe(const char *key, int mode) {
   return 0;
 }
 //////////////////////////////////////////////////////////////////////////////////////
-void *read_response() {
 
-  int f_resp;
-  // read response in response pipe
-    if ((f_resp = open(sessionRQST.resp_pipe_path, O_RDONLY)) < 0) exit(1);
-
-
-  char response[MAX_STRING_SIZE]; // Adjust size based on expected response length
-  ssize_t resp_len = read_all(f_resp, response, sizeof(response) - 1, NULL); // Leave space for null terminator
-  if (resp_len < 0) {
-      perror("Error reading from response pipe");
-      close(f_resp);
-      return -1;
-  }
-  response[resp_len] = '\0';
-
-	printf("Server returned %c for operation: %c", response[1], response[0]);
-  close(f_resp);
-}
 
 //////////////////////////////////////////////////////////////////////////////////////
 // read from notif pipe and print to stdout
 void *read_Thread(void *arg) {
 
-  int f_notif;
+
   // read response in response pipe
   if ((f_notif = open(sessionRQST.notif_pipe_path, O_RDONLY)) < 0) exit(1);
 
@@ -134,7 +145,6 @@ void *read_Thread(void *arg) {
   if (resp_len < 0) {
       perror("Error reading from response pipe");
       close(f_resp);
-      return -1;
   }
   response[resp_len] = '\0';
 

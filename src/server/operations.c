@@ -10,7 +10,8 @@
 
 #include "constants.h"
 #include "io.h"
-#include "kvs.h"
+#include "src/server/kvs.h"
+#include "src/common/protocol.h"
 
 static struct HashTable *kvs_table = NULL;
 
@@ -184,7 +185,7 @@ void kvs_wait(unsigned int delay_ms) {
 
 
 ///////////////////////////////////////////////////////////////////////////////////
-int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_resp, int f_notif, char mode) {
+int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_notif, char mode) {
 
    if (kvs_table == NULL) {
     fprintf(stderr, "KVS state must be initialized\n");
@@ -194,11 +195,11 @@ int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_resp, int f_notif,
   pthread_rwlock_wrlock(&kvs_table->tablelock);
 
   if(mode == OP_CODE_SUBSCRIBE) {
-    if (execute_subscribe(kvs_table, key, f_resp, f_notif) != 0) {
+    if (execute_subscribe(kvs_table, key, f_notif) != 0) {
       return 1;
 
-  } else if (mode == 0P_CODE_UNSUBSCRIBE) {
-      if (execute_unsubscribe(kvs_table, key, f_resp, f_notif) != 0) {
+  } else if (mode == OP_CODE_UNSUBSCRIBE) {
+      if (execute_unsubscribe(kvs_table, key, f_notif) != 0) {
         return 1;
       }
     }
@@ -209,7 +210,7 @@ int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_resp, int f_notif,
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
-int kvs_disconnect(const char client????) {
+int kvs_disconnect(const int notif_pipe) {
 
   if (kvs_table == NULL) {
     fprintf(stderr, "KVS state must be initialized\n");
@@ -219,7 +220,7 @@ int kvs_disconnect(const char client????) {
   pthread_rwlock_wrlock(&kvs_table->tablelock);
 
   //delete the client from the kvs notif_pipes list in every key he's in
-  if (execute_disconnect(kvs_table, key, f_resp, f_notif) != 0) {
+  if (execute_disconnect(kvs_table,notif_pipe) != 0) {
     return 1;
   }
 

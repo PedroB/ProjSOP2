@@ -4,7 +4,7 @@
 
 #include <pthread.h>
 #include <stddef.h>
-#include <constants.h>
+#include "constants.h"
 
 typedef struct NotifPipeNode {
     int notif_pipe;                   // The notification pipe string
@@ -52,4 +52,9 @@ int delete_pair(HashTable *ht, const char *key);
 /// @param ht Hash table to be deleted.
 void free_table(HashTable *ht);
 
+int execute_disconnect(HashTable *ht,const int notif_pipe);
+
+int execute_unsubscribe(HashTable *ht,const char *key, const int notif_pipe);
+
+int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe);
 #endif // KVS_H

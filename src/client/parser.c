@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <src/common/protocol.h>
 
 #include "src/common/constants.h"
 
@@ -191,4 +192,35 @@ int parse_delay(int fd, unsigned int *delay) {
   }
 
   return 0;
+}
+
+int parse_key(int fd, char *key, size_t max_size) {
+    char buffer[max_size];
+
+    // Ler do descritor de arquivo
+    ssize_t bytes_read = read(fd, buffer, max_size - 1);
+    if (bytes_read <= 0) {
+        return 1; // Erro ou nada lido
+    }
+
+    buffer[bytes_read] = '\0'; // Garantir terminação da string
+
+    // Procurar por parênteses e extrair a chave
+    char *start = strchr(buffer, '[');
+    char *end = strchr(buffer, ']');
+
+    if (!start || !end || start >= end) {
+        return 1; // Parênteses inválidos ou chave ausente
+    }
+
+    // Copiar apenas a chave entre os parênteses
+    size_t key_length = end - start - 1;
+    if (key_length >= max_size) {
+        return 1; // A chave excede o tamanho permitido
+    }
+
+    strncpy(key, start + 1, key_length);
+    key[key_length] = '\0'; // Adicionar terminação da string
+
+    return 0; // Sucesso
 }

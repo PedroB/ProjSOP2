@@ -25,7 +25,5 @@ enum Server_Command get_next2(int f_req) {
     case '4':
       return CMD_UNSUBSCRIBE;
 
-    default:
-      return CMD_INVALID;
   }
 }

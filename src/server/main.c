@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <semaphore.h>
@@ -14,8 +15,9 @@
 #include "operations.h"
 #include "parser.h"
 #include "pthread.h"
-#include "common/protocol.h"
-#include "server/server_parser.h"
+#include "src/common/io.h"
+#include "src/common/protocol.h"
+#include "src/server/server_parser.h"
 
 struct SharedData {
   DIR *dir;
@@ -74,7 +76,7 @@ static int entry_files(const char *dir, struct dirent *entry, char *in_path,
   return 0;
 }
 
-void *main_Thread(void *arg) {
+void *main_Thread() {
     sessionRqst sessionRQST;
 
     while (1) {
@@ -97,10 +99,10 @@ void *main_Thread(void *arg) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int write_to_resp_pipe(const char *pipe_path, char op_code, char result) {
-    int f_pipe;
+int write_to_resp_pipe(int f_pipe, char op_code, char result) {
+  
 
-    if ((f_pipe = open(pipe_path, O_WRONLY)) < 0) exit(1);
+   
 
     char msg[MAX_STRING_SIZE];
     int msg_len = snprintf(msg, sizeof(msg), "%c%c", op_code, result);
@@ -112,7 +114,7 @@ int write_to_resp_pipe(const char *pipe_path, char op_code, char result) {
         return -1;
     }
 
-    ssize_t n = write_all(f_pipe, msg, msg_len);
+    ssize_t n = write_all(f_pipe, msg,(size_t) msg_len);
     if (n != msg_len) {
         perror("Error writing to named pipe");
         close(f_pipe);
@@ -125,15 +127,12 @@ int write_to_resp_pipe(const char *pipe_path, char op_code, char result) {
 }
 
 
-void *manager_thread(void *){
+void *manager_thread(){
   sessionRqst sessionRQST;
   char req_pipe_path[MAX_BUFFER_SIZE+1], resp_pipe_path[MAX_BUFFER_SIZE+1], notif_pipe_path[MAX_BUFFER_SIZE+1];
   int f_req, f_resp, f_notif;
-
-  pthread_mutex_lock(&mutexBuffer);
-  int session_id = session_num;
-  session_num++;
-  pthread_mutex_unlock(&mutexBuffer);
+  
+  char key[MAX_STRING_SIZE];
 
 
   while(1){
@@ -153,7 +152,7 @@ void *manager_thread(void *){
 
     if ((f_resp = open (resp_pipe_path, O_WRONLY)) < 0) exit(1);
 
-    const char *message = "OP_CODE=1 | 1"; 
+    const char *message = "11"; 
     ssize_t n = write_all(f_resp, message, strlen(message)); // Write the string to the pipe
     
     if (n != (ssize_t)strlen(message)) {
@@ -162,46 +161,71 @@ void *manager_thread(void *){
 
     if ((f_req = open (req_pipe_path, O_RDONLY)) < 0) exit(1);
 
-    int result;
+    char result;
     int atending_client = 1;
-    while(atending_client){
+  while (atending_client) {
+    
 
-        switch(get_next(f_req)){
+    switch (get_next(f_req)) {
+        case CMD_DISCONNECT:
+            if (kvs_disconnect(f_notif) != 0) {
+                result = '1';
+                n = write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+            atending_client = 0; // Finaliza o atendimento do cliente
+            } else {
+                result = '0';
+                n = write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+            atending_client = 0; // Finaliza o atendimento do cliente
+            }
+            
+            break;
 
-      
-          case CMD_DISCONNECT:
-              //DUVIDA: mudar estas variáveis globais!!!!?????????
-              // sessionRqst buf[MAX_BUFFER_SIZE];
-              // count;
+        case CMD_SUBSCRIBE:
+            // Lê a chave associada ao comando do pipe
+            memset(key, 0, MAX_STRING_SIZE); // Limpa o buffer da chave
+            if (read(f_req, key, MAX_STRING_SIZE) <= 0) {
+                result = '1'; // Erro ao ler a chave
+            } else {
+                if (kvs_subs_or_unsubs(key, f_notif, OP_CODE_SUBSCRIBE) != 0) {
+                    result = '1'; // Erro ao subscrever
+                    n = write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+                    atending_client = 0;
+                } else {
+                    result = '0'; // Sucesso
+                    n = write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+                    atending_client = 0;
+                }
+            }
+            
+            break;
 
-              if(kvs_disconnect(key, f_resp,  f_notif, OP_CODE_SUBSCRIBE) != 0){
-                result = 1;
-              } else {
-                result = 0;
-              }
-              n = write_to_resp_pipe(f_resp,OP_CODE_SUBSCRIBE,result);
-              break;
-          case CMD_SUBSCRIBE:
+        case CMD_UNSUBSCRIBE:
+            // Lê a chave associada ao comando do pipe
+            memset(key, 0, MAX_STRING_SIZE); // Limpa o buffer da chave
+            if (read(f_req, key, MAX_STRING_SIZE) <= 0) {
+                result = 1; // Erro ao ler a chave
+            } else {
+                if (kvs_subs_or_unsubs(key, f_notif, OP_CODE_UNSUBSCRIBE) != 0) {
+                    result = '1'; // Erro ao cancelar subscrição
+                    n = write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+            atending_client = 0; // Finaliza o atendimento do cliente
+                } else {
+                    result = '0'; // Sucesso
+                    n = write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+            atending_client = 0; // Finaliza o atendimento do cliente
+                }
+            }
+          
+            break;
 
-                if(kvs_subs_or_unsubs(key, f_resp,  f_notif, OP_CODE_SUBSCRIBE) != 0){
-                result = 1;
-              } else {
-                result = 0;
-              }
-              n = write_to_resp_pipe(f_resp,OP_CODE_SUBSCRIBE,result);
-              break;
-
-          case CMD_UNSUBSCRIBE:
-                if(kvs_subs_or_unsubs(key, f_resp,  f_notif, OP_CODE_UNSUBSCRIBE) != 0){
-                result = 1;
-              } else {
-                result = 0;
-              }
-              n = write_to_resp_pipe(f_resp,OP_CODE_SUBSCRIBE,result);
-              break;
-        }
-     }
+        default:
+            
+            atending_client = 0; // Finaliza o atendimento do cliente
+            break;
     }
+}
+
+}
 }
 
 static int run_job(int in_fd, int out_fd, char *filename) {
@@ -287,7 +311,7 @@ static int run_job(int in_fd, int out_fd, char *filename) {
       }
       break;
 
-    case CMD_INVALID:
+    case 8:
       write_str(STDERR_FILENO, "Invalid command. See HELP for usage\n");
       break;
 
@@ -494,7 +518,6 @@ int main(int argc, char **argv) {
 
   pthread_t main_thread;
   pthread_t manager_thread[MAX_SESSION_COUNT];
-  pthread_t notif_thread[MAX_SESSION_COUNT];
   if (pthread_create(&main_thread, NULL, main_Thread, NULL) != 0) {
       fprintf(stderr, "Erro ao criar thread");
       exit(EXIT_FAILURE);
