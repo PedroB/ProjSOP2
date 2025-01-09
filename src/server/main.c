@@ -78,7 +78,7 @@ void *main_Thread(void *arg) {
     sessionRqst sessionRQST;
 
     while (1) {
-        ssize_t n = read(f_server, (void *)&sessionRQST, sizeof(sessionRQST));
+        ssize_t n = read_all(f_server, (void *)&sessionRQST, sizeof(sessionRQST), NULL);
         if (n != sizeof(sessionRQST)) {
             exit(1);
         }
@@ -97,13 +97,13 @@ void *main_Thread(void *arg) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int write_to_named_pipe(const char *pipe_path, int op_code, int result) {
+int write_to_resp_pipe(const char *pipe_path, char op_code, char result) {
     int f_pipe;
 
     if ((f_pipe = open(pipe_path, O_WRONLY)) < 0) exit(1);
 
     char msg[MAX_STRING_SIZE];
-    int msg_len = snprintf(msg, sizeof(msg), "%d|%s", op_code, key);
+    int msg_len = snprintf(msg, sizeof(msg), "%c%c", op_code, result);
 
     // Check if snprintf succeeded
     if (msg_len < 0 || (size_t)msg_len >= sizeof(msg)) {
@@ -112,7 +112,7 @@ int write_to_named_pipe(const char *pipe_path, int op_code, int result) {
         return -1;
     }
 
-    ssize_t n = write(f_pipe, msg, msg_len);
+    ssize_t n = write_all(f_pipe, msg, msg_len);
     if (n != msg_len) {
         perror("Error writing to named pipe");
         close(f_pipe);
@@ -153,8 +153,8 @@ void *manager_thread(void *){
 
     if ((f_resp = open (resp_pipe_path, O_WRONLY)) < 0) exit(1);
 
-    const char *message = "OP_CODE=1 | 1";
-    ssize_t n = write(f_resp, message, strlen(message)); // Write the string to the pipe
+    const char *message = "OP_CODE=1 | 1"; 
+    ssize_t n = write_all(f_resp, message, strlen(message)); // Write the string to the pipe
     
     if (n != (ssize_t)strlen(message)) {
       exit(1);
@@ -170,35 +170,38 @@ void *manager_thread(void *){
 
       
           case CMD_DISCONNECT:
-              execute_disconnect();
-              //iterar pela kvs e pela ista de notif pipes de cada chave
+              //DUVIDA: mudar estas variáveis globais!!!!?????????
+              // sessionRqst buf[MAX_BUFFER_SIZE];
+              // count;
+
+              if(kvs_disconnect(key, f_resp,  f_notif, OP_CODE_SUBSCRIBE) != 0){
+                result = 1;
+              } else {
+                result = 0;
+              }
+              n = write_to_resp_pipe(f_resp,OP_CODE_SUBSCRIBE,result);
               break;
           case CMD_SUBSCRIBE:
 
-              if(execute_subscribe(key, resp_pipe_path,) != 0){
+                if(kvs_subs_or_unsubs(key, f_resp,  f_notif, OP_CODE_SUBSCRIBE) != 0){
                 result = 1;
-                n = write_to_named_pipe(f_resp,OP_CODE_SUBSCRIBE,result);
-                break;
-              }
+              } else {
                 result = 0;
-                n = write_to_named_pipe(f_resp,OP_CODE_SUBSCRIBE,result);
-                break;
-
+              }
+              n = write_to_resp_pipe(f_resp,OP_CODE_SUBSCRIBE,result);
               break;
+
           case CMD_UNSUBSCRIBE:
-              if(execute_unsubscribe(resp_pipe_path, key) != 0){
+                if(kvs_subs_or_unsubs(key, f_resp,  f_notif, OP_CODE_UNSUBSCRIBE) != 0){
                 result = 1;
-                n = write_to_named_pipe(f_resp,OP_CODE_UNSUBSCRIBE,result);
-                break;
-              }
+              } else {
                 result = 0;
-                n = write_to_named_pipe(f_resp,OP_CODE_UNSUBSCRIBE,result);
-                break;
-              
+              }
+              n = write_to_resp_pipe(f_resp,OP_CODE_SUBSCRIBE,result);
               break;
         }
-  }
-}
+     }
+    }
 }
 
 static int run_job(int in_fd, int out_fd, char *filename) {

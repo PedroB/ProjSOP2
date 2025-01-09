@@ -7,7 +7,7 @@
 #include <constants.h>
 
 typedef struct NotifPipeNode {
-    char *notif_pipe;                   // The notification pipe string
+    int notif_pipe;                   // The notification pipe string
     struct NotifPipeNode *next;         // Pointer to the next node in the list
 } NotifPipeNode;
 

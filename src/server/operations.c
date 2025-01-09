@@ -181,3 +181,48 @@ void kvs_wait(unsigned int delay_ms) {
   struct timespec delay = delay_to_timespec(delay_ms);
   nanosleep(&delay, NULL);
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////
+int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_resp, int f_notif, char mode) {
+
+   if (kvs_table == NULL) {
+    fprintf(stderr, "KVS state must be initialized\n");
+    return 1;
+  }
+
+  pthread_rwlock_wrlock(&kvs_table->tablelock);
+
+  if(mode == OP_CODE_SUBSCRIBE) {
+    if (execute_subscribe(kvs_table, key, f_resp, f_notif) != 0) {
+      return 1;
+
+  } else if (mode == 0P_CODE_UNSUBSCRIBE) {
+      if (execute_unsubscribe(kvs_table, key, f_resp, f_notif) != 0) {
+        return 1;
+      }
+    }
+  } 
+
+  pthread_rwlock_unlock(&kvs_table->tablelock);
+  return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+int kvs_disconnect(const char client????) {
+
+  if (kvs_table == NULL) {
+    fprintf(stderr, "KVS state must be initialized\n");
+    return 1;
+  }
+
+  pthread_rwlock_wrlock(&kvs_table->tablelock);
+
+  //delete the client from the kvs notif_pipes list in every key he's in
+  if (execute_disconnect(kvs_table, key, f_resp, f_notif) != 0) {
+    return 1;
+  }
+
+  pthread_rwlock_unlock(&kvs_table->tablelock);
+  return 0;
+}

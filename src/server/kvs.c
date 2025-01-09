@@ -1,4 +1,5 @@
 #include "kvs.h"
+#include "constants.h"
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -36,6 +37,67 @@ struct HashTable *create_hash_table() {
   return ht;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////////
+int write_to_notif_pipe(const char *pipe_path, int is_deleted, int key, int value) {
+    int f_pipe;
+
+    if ((f_pipe = open(pipe_path, O_WRONLY)) < 0) exit(1);
+
+    char msg[MAX_STRING_SIZE];
+    int msg_len;
+
+    ////////////////FAZER FAZERfd
+    if(is_deleted == DELETED) {
+
+      msg_len = snprintf(msg, sizeof(msg), "(%d, DELETED)", key);
+    } else if(is_deleted == NOT_DELETED) {
+      msg_len = snprintf(msg, sizeof(msg), "(%d, %s)", key, value);
+
+    }
+
+    // Check if snprintf succeeded
+    if (msg_len < 0 || (size_t)msg_len >= sizeof(msg)) {
+        exit(1);
+    }
+
+    ssize_t n = write_all(f_pipe, msg, msg_len);
+    if (n != msg_len) {
+        exit(1);
+    }
+
+    close(f_pipe);
+
+    return 0;
+}
+///////////////////////////////////////////////////////////////////////////////////
+
+void notify_all_pipes(int is_deleted, NotifPipeNode *head, const char *key, const char *value) {
+    NotifPipeNode *current = head;
+
+    while (current != NULL) {
+
+        if(is_deleted == DELETED) {
+          
+          write_to_notif_pipe(current->notif_pipe, DELETED, key, value);
+
+        } else if (is_deleted == NOT_DELETED) {
+          write_to_notif_pipe(current->notif_pipe, NOT_DELETED, key, value);
+
+        }
+
+
+
+
+
+        // Call write_to_notif_pipe with the current pipe path and provided key/value
+
+        // Move to the next notification pipe
+        current = current->next;
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////////
 int write_pair(HashTable *ht, const char *key, const char *value, const char *notif_pipe) {
   int index = hash(key);
 
@@ -58,10 +120,15 @@ int write_pair(HashTable *ht, const char *key, const char *value, const char *no
   keyNode->key = strdup(key);       // Allocate memory for the key
   keyNode->value = strdup(value);   // Allocate memory for the value
   
-  keyNode->notif_pipes[count] = strdup(notif_pipe);
 
   keyNode->next = ht->table[index]; // Link to existing nodes
   ht->table[index] = keyNode; // Place new key node at the start of the list
+
+  //iterar pela notif_pipes list e fazer
+  notify_all_pipes(NOT_DELETED, keyNode->notif_pipes_head, keyNode->key, keyNode->value);
+
+  // write_to_notif_pipe(pipe_path, NOT_DELETED, int key, int value);
+
   return 0;
 }
 
@@ -84,6 +151,16 @@ char *read_pair(HashTable *ht, const char *key) {
   return NULL; // Key not found
 }
 
+
+void free_notif_pipes(NotifPipeNode *head) {
+    NotifPipeNode *current = head;
+    while (current != NULL) {
+        NotifPipeNode *temp = current;
+        current = current->next;
+        free(temp); // Free the current node
+    }
+}
+
 int delete_pair(HashTable *ht, const char *key) {
   int index = hash(key);
 
@@ -103,9 +180,13 @@ int delete_pair(HashTable *ht, const char *key) {
         prevNode->next =
             keyNode->next; // Link the previous node to the next node
       }
+
+      notify_all_pipes(DELETED, keyNode->notif_pipes_head, keyNode->key, keyNode->value);
+
       // Free the memory allocated for the key and value
       free(keyNode->key);
       free(keyNode->value);
+      free_notif_pipes(keyNode->notif_pipes_head);
       free(keyNode); // Free the key node itself
       return 0;      // Exit the function
     }
@@ -212,7 +293,7 @@ int remove_notif_pipe(NotifPipeNode **head_node, const char *notif_pipe) {
 
 
 ///////////////////////////////////////////////////////////////////////////////
-int execute_subscribe(const char *key, const char *notif_pipe, HashTable *ht) {
+int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe) {
     if (!key || !notif_pipe || !ht) {
         fprintf(stderr, "Erro: Parâmetros inválidos.\n");
         return 1;

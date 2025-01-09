@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
   char resp_pipe_path[256] = "/tmp/resp";
   char notif_pipe_path[256] = "/tmp/notif";
 
-  char e[MAX_NUMBER_SUB][MAX_KEY_CHARS] = {0};
+  // char e[MAX_NUMBER_SUB][MAX_KEY_CHARS] = {0};
   unsigned int delay_ms;
   size_t num;
 
@@ -29,11 +29,17 @@ int main(int argc, char *argv[]) {
   strncat(resp_pipe_path, argv[1], strlen(argv[1]) * sizeof(char));
   strncat(notif_pipe_path, argv[1], strlen(argv[1]) * sizeof(char));
 
+
   if(kvs_connect(req_pipe_path,resp_pipe_path,argv[2],notif_pipe_path)){
     fprintf(stderr, "Failed to connect to KVS\n");
     return 1;
-  }
+  } 
 
+  //dispatch the thread that reads from the response pipe and prints to stdout
+  if (pthread_create(&read_thread, NULL, read_Thread, NULL) != 0) {
+      fprintf(stderr, "Erro ao criar thread");
+      exit(EXIT_FAILURE);
+  }
 
 
   while (1) {
@@ -48,11 +54,10 @@ int main(int argc, char *argv[]) {
       return 0;
 
     case CMD_SUBSCRIBE:
-      num = parse_list(STDIN_FILENO, keys, 1, MAX_STRING_SIZE);
-      if (num == 0) {
-        fprintf(stderr, "Invalid command. See HELP for usage\n");
-        continue;
-      }
+      // if (num == 0) {
+      //   fprintf(stderr, "Invalid command. See HELP for usage\n");
+      //   continue;
+      // }
 
       if (kvs_subscribe_unsubscribe(keys[0], OP_CODE_SUBSCRIBE)) {
         fprintf(stderr, "Command subscribe failed\n");
@@ -97,4 +102,7 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
+
+  pthread_join(read_Thread, NULL);
+
 }
