@@ -102,7 +102,7 @@ void *main_Thread() {
             sem_wait(&semEmpty); // Espera que haja espaço no buffer
            
             // Adiciona o item ao buffer
-            memcpy(&buf[count], &sessionMessage, sizeof(sessionProtoMessage));
+            memcpy(&buf[count], &sessionMessage, sizeof(sessionRqst));
             count++;
             pthread_mutex_unlock(&mutexBuffer); // Sai da seção crítica
             sem_post(&semFull); // Indica que há um item disponível no buffer
@@ -149,11 +149,18 @@ void *manager_thread(){
   
   char key[MAX_STRING_SIZE];
 
+  puts("passou a bola a manager thread");
 
+  printf("req PIPE PATH DO PROD CONS: %s", buf[count].req_pipe_path);
   while(1){
     pthread_mutex_lock(&mutexBuffer);
     sem_wait(&semFull);
+
+
+
     memcpy(&sessionRQST, &buf[count], sizeof(sessionRQST));
+
+    
     count--;
     pthread_mutex_unlock(&mutexBuffer);
     sem_post(&semEmpty);
@@ -166,13 +173,17 @@ void *manager_thread(){
     strncpy(notif_pipe_path,sessionRQST.notif_pipe_path,MAX_BUFFER_SIZE);
 
     if ((f_resp = open (resp_pipe_path, O_WRONLY)) < 0) exit(1);
-
+    puts("abriu resp pipe");
     const char *message = "11"; 
-    ssize_t n = write_all(f_resp, message, strlen(message)); // Write the string to the pipe
+    // ssize_t n = write_all(f_resp, message, strlen(message)); // Write the string to the pipe
+    write_all(f_resp, message, strlen(message)); // Write the string to the pipe
+
     
-    if (n != (ssize_t)strlen(message)) {
-      exit(1);
-    }
+    puts("fez write ");
+
+    // if (n != (ssize_t)strlen(message)) {
+    //   exit(1);
+    // }
 
     if ((f_req = open (req_pipe_path, O_RDONLY)) < 0) exit(1);
 
@@ -182,22 +193,23 @@ void *manager_thread(){
     int atending_client = 1;
   while (atending_client) {
     
-
+    puts("MANAGER ENTROU NO WHILE, ESTA A ATENDER");
     switch (get_next2(f_req)) {
         case CMD_DISCONNECT:
             if (kvs_disconnect(notif_pipe_path) != 0) {
                 result = '1';
-                n = write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+                write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
             atending_client = 0; // Finaliza o atendimento do cliente
             } else {
                 result = '0';
-                n = write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+                write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
             atending_client = 0; // Finaliza o atendimento do cliente
             }
             
             break;
 
         case CMD_SUBSCRIBE:
+            puts("comando server subscribe");
             // Lê a chave associada ao comando do pipe
             memset(key, 0, MAX_STRING_SIZE); // Limpa o buffer da chave
             if (read(f_req, key, MAX_STRING_SIZE) <= 0) {
@@ -205,11 +217,11 @@ void *manager_thread(){
             } else {
                 if (kvs_subs_or_unsubs(key, f_notif, OP_CODE_SUBSCRIBE) != 0) {
                     result = '1'; // Erro ao subscrever
-                    n = write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+                    write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
                     atending_client = 0;
                 } else {
                     result = '0'; // Sucesso
-                    n = write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+                    write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
                     atending_client = 0;
                 }
             }
@@ -224,11 +236,11 @@ void *manager_thread(){
             } else {
                 if (kvs_subs_or_unsubs(key, f_notif, OP_CODE_UNSUBSCRIBE) != 0) {
                     result = '1'; // Erro ao cancelar subscrição
-                    n = write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+                    write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
             atending_client = 0; // Finaliza o atendimento do cliente
                 } else {
                     result = '0'; // Sucesso
-                    n = write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+                    write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
             atending_client = 0; // Finaliza o atendimento do cliente
                 }
             }
@@ -456,9 +468,9 @@ static void dispatch_threads(DIR *dir, char *reg_pipe_path) {
         fprintf(stderr, "Error creating thread\n");
         free(arg);
         exit(EXIT_FAILURE);
-        puts("CRIOU 1 MANAGER THREAD");
     }
-  }
+  }        puts("CRIOU as MANAGER THREAD");
+
   
   // ler do FIFO de registo
 
@@ -484,7 +496,7 @@ static void dispatch_threads(DIR *dir, char *reg_pipe_path) {
       free(threads);
       return;
     }
-  }
+  } 
 
   for (unsigned int i = 0; i < MAX_SESSION_COUNT; i++) {
     if (pthread_join(manager_threads[i], NULL) != 0) {
@@ -500,6 +512,7 @@ static void dispatch_threads(DIR *dir, char *reg_pipe_path) {
 
   free(threads);
   free(manager_threads);
+  puts("ACABOU DISPATCH");
 }
 
 int main(int argc, char **argv) {
@@ -568,6 +581,9 @@ int main(int argc, char **argv) {
     wait(NULL);
     active_backups--;
   }
+
+  pthread_join(main_thread, NULL);
+
   close(f_server);
 
   kvs_terminate();

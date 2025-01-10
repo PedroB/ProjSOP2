@@ -16,7 +16,7 @@
 
 char req_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], resp_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], notif_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1];
 
-int f_req, f_resp,f_notif, f_server, session_id;
+int f_req, f_resp,f_notif, f_server;
 sessionProtoMessage sessionMessage;
 
 
@@ -127,6 +127,7 @@ int kvs_subscribe_unsubscribe(const char *key, char mode) {
     // const char *req_pipe_path = sessionMessage.req_pipe_path; 
     // const char *resp_pipe_path = sessionMessage.resp_pipe_path; // Response pipe path
 
+  puts("entrou subs!!!!!");
     if ((f_req = open(req_Pipe_Path, O_WRONLY)) < 0) exit (1);
 
     // Prepare the message with format: "OP_CODE|key"             
