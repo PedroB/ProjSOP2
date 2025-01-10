@@ -77,10 +77,10 @@ static int entry_files(const char *dir, struct dirent *entry, char *in_path,
 }
 
 void *main_Thread() {
-    sessionRqst sessionRQST;
+    sessionProtoMessage sessionRQST;
 
     while (1) {
-        ssize_t n = read_all(f_server, (void *)&sessionRQST, sizeof(sessionRQST), NULL);
+        ssize_t n = read_all(f_server, (void *)&sessionRQST, sizeof(sessionProtoMessage), NULL);
         if (n != sizeof(sessionRQST)) {
             exit(1);
         }

@@ -19,8 +19,14 @@ typedef struct {
     char req_pipe_path[MAX_PIPE_PATH_LENGTH];
     char resp_pipe_path[MAX_PIPE_PATH_LENGTH];
     char notif_pipe_path[MAX_PIPE_PATH_LENGTH];
-    char key[MAX_STRING_SIZE];
+    // char key[MAX_STRING_SIZE];
 } sessionRqst;
 
+typedef struct {
+    char opcode;
+    char req_pipe_path[MAX_PIPE_PATH_LENGTH];
+    char resp_pipe_path[MAX_PIPE_PATH_LENGTH];
+    char notif_pipe_path[MAX_PIPE_PATH_LENGTH];
+} sessionProtoMessage;
 
 #endif // COMMON_PROTOCOL_H

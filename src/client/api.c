@@ -35,7 +35,7 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
 
   if ((f_server = open(server_pipe_path, O_WRONLY)) < 0) exit(1);
 
-  sessionRQST.result = '0';
+  sessionRQST.result = '1';
   memset(sessionRQST.req_pipe_path, 0, MAX_PIPE_PATH_LENGTH);
   memset(sessionRQST.resp_pipe_path, 0, MAX_PIPE_PATH_LENGTH);
   memset(sessionRQST.notif_pipe_path, 0, MAX_PIPE_PATH_LENGTH);
