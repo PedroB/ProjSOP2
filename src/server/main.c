@@ -36,7 +36,7 @@ pthread_mutex_t n_current_backups_lock = PTHREAD_MUTEX_INITIALIZER;
 sem_t semEmpty;
 sem_t semFull;
 pthread_mutex_t mutexBuffer;
-
+pthread_t main_thread;
 
 int prodptr=0, consptr=0, count=0;
 
@@ -89,7 +89,7 @@ void *main_Thread() {
     // }
     // printf("\n");
 
-       ssize_t read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
+       read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
 
         puts("fez o read");
       
@@ -456,6 +456,7 @@ static void dispatch_threads(DIR *dir, char *reg_pipe_path) {
         fprintf(stderr, "Error creating thread\n");
         free(arg);
         exit(EXIT_FAILURE);
+        puts("CRIOU 1 MANAGER THREAD");
     }
   }
   
@@ -466,22 +467,16 @@ static void dispatch_threads(DIR *dir, char *reg_pipe_path) {
   // strncat(reg_pipe_path, argv[4], strlen(argv[4]) * sizeof(char));
     if (mkfifo (reg_pipe_path, 0777) < 0)
     exit (1);
-
       
     if ((f_server = open (reg_pipe_path, O_RDWR)) < 0) exit(1);
 
-    pthread_mutex_init(&mutexBuffer, NULL);
-    sem_init(&semEmpty, 0, MAX_SESSION_COUNT);
-    sem_init(&semFull, 0, 0);
 
-    // pthread_t manager_thread[MAX_SESSION_COUNT];
-    // if (pthread_create(&main_thread, NULL, main_Thread, NULL) != 0) {
-    //     fprintf(stderr, "Erro ao criar thread");
-    //     exit(EXIT_FAILURE);
-    // }
-    puts("a seguir vai para a main");
-    main_Thread();
-
+// pthread_t manager_thread[MAX_SESSION_COUNT];
+    if (pthread_create(&main_thread, NULL, main_Thread, NULL) != 0) {
+        fprintf(stderr, "Erro ao criar thread");
+        exit(EXIT_FAILURE);
+    }
+    
   for (unsigned int i = 0; i < max_threads; i++) {
     if (pthread_join(threads[i], NULL) != 0) {
       fprintf(stderr, "Failed to join thread %u\n", i);
@@ -555,6 +550,12 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Failed to open directory: %s\n", argv[1]);
     return 0;
   }
+
+  
+    pthread_mutex_init(&mutexBuffer, NULL);
+    sem_init(&semEmpty, 0, MAX_SESSION_COUNT);
+    sem_init(&semFull, 0, 0);
+
 
   dispatch_threads(dir, argv[4]);
 
