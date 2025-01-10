@@ -210,7 +210,10 @@ int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_notif, char mode) 
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
-int kvs_disconnect(const int notif_pipe) {
+int kvs_disconnect(const char *notif_pipe_path) {
+
+  int f_notif = 0;
+  if ((f_notif = open (notif_pipe_path, O_WRONLY)) < 0) exit(1);
 
   if (kvs_table == NULL) {
     fprintf(stderr, "KVS state must be initialized\n");
@@ -220,10 +223,12 @@ int kvs_disconnect(const int notif_pipe) {
   pthread_rwlock_wrlock(&kvs_table->tablelock);
 
   //delete the client from the kvs notif_pipes list in every key he's in
-  if (execute_disconnect(kvs_table,notif_pipe) != 0) {
+  if (execute_disconnect(kvs_table,f_notif) != 0) {
     return 1;
   }
 
   pthread_rwlock_unlock(&kvs_table->tablelock);
+
+  close(f_notif);
   return 0;
 }

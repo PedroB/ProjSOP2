@@ -77,31 +77,37 @@ static int entry_files(const char *dir, struct dirent *entry, char *in_path,
 }
 
 void *main_Thread() {
-    sessionProtoMessage sessionRQST;
-
+    sessionProtoMessage sessionMessage;
+    
     while (1) {
-        ssize_t n = read_all(f_server, (void *)&sessionRQST, sizeof(sessionProtoMessage), NULL);
-        if (n != sizeof(sessionRQST)) {
+        ssize_t n = read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
+        if (n != sizeof(sessionMessage)) {
             exit(1);
         }
+        printf("na thread anfitriah isto leu a mensagem de request de connect");
 
-        if (sessionRQST.opcode == '0') {
+        // if (sessionMessage.opcode == '0') {
             pthread_mutex_lock(&mutexBuffer);
             sem_wait(&semEmpty); // Espera que haja espaço no buffer
            
             // Adiciona o item ao buffer
-            memcpy(&buf[count], &sessionRQST, sizeof(sessionRQST));
+            memcpy(&buf[count], &sessionMessage, sizeof(sessionProtoMessage));
             count++;
             pthread_mutex_unlock(&mutexBuffer); // Sai da seção crítica
             sem_post(&semFull); // Indica que há um item disponível no buffer
-        }
+        
     }
+    printf("saiu do while");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int write_to_resp_pipe(int f_pipe, char op_code, char result) {
 
     char msg[MAX_STRING_SIZE];
+
+    // snprintf(msg, MAX_STRING_SIZE, "%c%c", op_code, result);
+
+
     int msg_len = snprintf(msg, sizeof(msg), "%c%c", op_code, result);
 
     // Check if snprintf succeeded
@@ -111,7 +117,7 @@ int write_to_resp_pipe(int f_pipe, char op_code, char result) {
         return -1;
     }
 
-    ssize_t n = write_all(f_pipe, msg,(size_t) msg_len);
+    ssize_t n = write_all(f_pipe, msg,(size_t) 2);
     if (n != msg_len) {
         perror("Error writing to named pipe");
         close(f_pipe);
@@ -127,7 +133,8 @@ int write_to_resp_pipe(int f_pipe, char op_code, char result) {
 void *manager_thread(){
   sessionRqst sessionRQST;
   char req_pipe_path[MAX_BUFFER_SIZE+1], resp_pipe_path[MAX_BUFFER_SIZE+1], notif_pipe_path[MAX_BUFFER_SIZE+1];
-  int f_req, f_resp, f_notif;
+  int f_req, f_resp;
+  int f_notif = 0;
   
   char key[MAX_STRING_SIZE];
 
@@ -158,7 +165,7 @@ void *manager_thread(){
 
     if ((f_req = open (req_pipe_path, O_RDONLY)) < 0) exit(1);
 
-    if ((f_notif = open (notif_pipe_path, O_RDONLY)) < 0) exit(1);
+    // if ((f_notif = open (notif_pipe_path, O_WRONLY)) < 0) exit(1);
 
     char result;
     int atending_client = 1;
@@ -167,7 +174,7 @@ void *manager_thread(){
 
     switch (get_next2(f_req)) {
         case CMD_DISCONNECT:
-            if (kvs_disconnect(f_notif) != 0) {
+            if (kvs_disconnect(notif_pipe_path) != 0) {
                 result = '1';
                 n = write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
             atending_client = 0; // Finaliza o atendimento do cliente

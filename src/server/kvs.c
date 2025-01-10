@@ -48,27 +48,25 @@ int write_to_notif_pipe(int f_pipe, int is_deleted, const char *key, const char 
 
     if (is_deleted == DELETED) {
         msg_len = snprintf(msg, sizeof(msg), "(%s, DELETED)", key);
-    } else if (is_deleted == NOT_DELETED) {
-        msg_len = snprintf(msg, sizeof(msg), "(%s, %s)", key, value);
     } else {
-        fprintf(stderr, "Invalid is_deleted value\n");
-        close(f_pipe);
-        exit(1);
+        msg_len = snprintf(msg, sizeof(msg), "(%s, %s)", key, value);
     }
 
     // Check if snprintf succeeded
-    if (msg_len < 0 || (size_t)msg_len >= sizeof(msg)) {
-        fprintf(stderr, "Error formatting message\n");
-        close(f_pipe);
-        exit(1);
-    }
+    // if (msg_len < 0 || (size_t)msg_len >= sizeof(msg)) {
+    //     fprintf(stderr, "Error formatting message\n");
+    //     close(f_pipe);
+    //     exit(1);
+    // }
 
-    ssize_t n = write_all(f_pipe, msg, (size_t)msg_len); // Conversão explícita
-    if (n != msg_len) {
-        fprintf(stderr, "Failed to write to pipe\n");
-        close(f_pipe);
-        exit(1);
-    }
+    // ssize_t n = write_all(f_pipe, msg, 83); // Conversão explícita
+    write_all(f_pipe, msg, 83); // Conversão explícita
+
+    // if (n != msg_len) {
+    //     fprintf(stderr, "Failed to write to pipe\n");
+    //     close(f_pipe);
+    //     exit(1);
+    // }
 
     close(f_pipe);
 
