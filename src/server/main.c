@@ -78,13 +78,24 @@ static int entry_files(const char *dir, struct dirent *entry, char *in_path,
 
 void *main_Thread() {
     sessionProtoMessage sessionMessage;
-    
+    puts("entrou na mainnnnnn_thread funcao");
     while (1) {
-        ssize_t n = read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
-        if (n != sizeof(sessionMessage)) {
-            exit(1);
-        }
-        printf("na thread anfitriah isto leu a mensagem de request de connect");
+        // ssize_t n = read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
+    //    ssize_t read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
+
+    // printf("Raw data READ (%zd bytes):\n", bytes_read);
+    // for (ssize_t i = 0; i < bytes_read; i++) {
+    //     printf("%02x ", ((unsigned char *)&sessionMessage)[i]);
+    // }
+    // printf("\n");
+
+       ssize_t read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
+
+        puts("fez o read");
+      
+        // if (n != sizeof(sessionMessage)) {
+        //     exit(1);
+        // }
 
         // if (sessionMessage.opcode == '0') {
             pthread_mutex_lock(&mutexBuffer);
@@ -411,7 +422,7 @@ static void *get_file(void *arguments) {
   pthread_exit(NULL);
 }
 
-static void dispatch_threads(DIR *dir) {
+static void dispatch_threads(DIR *dir, char *reg_pipe_path) {
   pthread_t *threads = malloc(max_threads * sizeof(pthread_t));
 
   if (threads == NULL) {
@@ -432,7 +443,44 @@ static void dispatch_threads(DIR *dir) {
     }
   }
 
+   pthread_t *manager_threads = malloc(MAX_SESSION_COUNT * sizeof(pthread_t));
+
+  for (int i = 0; i < MAX_SESSION_COUNT; i++) {
+    int *arg = malloc(sizeof(int)); // Dynamically allocate memory
+    if (arg == NULL) {
+        fprintf(stderr, "Failed to allocate memory\n");
+        exit(EXIT_FAILURE);
+    }
+    *arg = i; // Store the index value
+    if (pthread_create(&manager_threads[i], NULL, manager_thread, arg) != 0) {
+        fprintf(stderr, "Error creating thread\n");
+        free(arg);
+        exit(EXIT_FAILURE);
+    }
+  }
+  
   // ler do FIFO de registo
+
+  // char reg_pipe_path[256] = "/tmp/reg";
+      unlink(reg_pipe_path);
+  // strncat(reg_pipe_path, argv[4], strlen(argv[4]) * sizeof(char));
+    if (mkfifo (reg_pipe_path, 0777) < 0)
+    exit (1);
+
+      
+    if ((f_server = open (reg_pipe_path, O_RDWR)) < 0) exit(1);
+
+    pthread_mutex_init(&mutexBuffer, NULL);
+    sem_init(&semEmpty, 0, MAX_SESSION_COUNT);
+    sem_init(&semFull, 0, 0);
+
+    // pthread_t manager_thread[MAX_SESSION_COUNT];
+    // if (pthread_create(&main_thread, NULL, main_Thread, NULL) != 0) {
+    //     fprintf(stderr, "Erro ao criar thread");
+    //     exit(EXIT_FAILURE);
+    // }
+    puts("a seguir vai para a main");
+    main_Thread();
 
   for (unsigned int i = 0; i < max_threads; i++) {
     if (pthread_join(threads[i], NULL) != 0) {
@@ -443,11 +491,20 @@ static void dispatch_threads(DIR *dir) {
     }
   }
 
+  for (unsigned int i = 0; i < MAX_SESSION_COUNT; i++) {
+    if (pthread_join(manager_threads[i], NULL) != 0) {
+      fprintf(stderr, "Failed to join thread %u\n", i);
+      free(manager_threads);
+      return;
+    }
+  }
+
   if (pthread_mutex_destroy(&thread_data.directory_mutex) != 0) {
     fprintf(stderr, "Failed to destroy directory_mutex\n");
   }
 
   free(threads);
+  free(manager_threads);
 }
 
 int main(int argc, char **argv) {
@@ -499,7 +556,7 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  dispatch_threads(dir);
+  dispatch_threads(dir, argv[4]);
 
   if (closedir(dir) == -1) {
     fprintf(stderr, "Failed to close directory\n");
@@ -510,56 +567,9 @@ int main(int argc, char **argv) {
     wait(NULL);
     active_backups--;
   }
-
-
-  // char reg_pipe_path[256] = "/tmp/reg";
-      unlink(argv[4]);
-  // strncat(reg_pipe_path, argv[4], strlen(argv[4]) * sizeof(char));
-    if (mkfifo (argv[4], 0777) < 0)
-    exit (1);
-
-    
-  if ((f_server = open (argv[4], O_RDWR)) < 0) exit(1);
-
-  pthread_mutex_init(&mutexBuffer, NULL);
-  sem_init(&semEmpty, 0, MAX_SESSION_COUNT);
-  sem_init(&semFull, 0, 0);
-
-
-  pthread_t main_thread;
-  // pthread_t manager_thread[MAX_SESSION_COUNT];
-  if (pthread_create(&main_thread, NULL, main_Thread, NULL) != 0) {
-      fprintf(stderr, "Erro ao criar thread");
-      exit(EXIT_FAILURE);
-  }
-
-    pthread_t *manager_threads = malloc(MAX_SESSION_COUNT * sizeof(pthread_t));
-
-  for (int i = 0; i < MAX_SESSION_COUNT; i++) {
-    int *arg = malloc(sizeof(int)); // Dynamically allocate memory
-    if (arg == NULL) {
-        fprintf(stderr, "Failed to allocate memory\n");
-        exit(EXIT_FAILURE);
-    }
-    *arg = i; // Store the index value
-    if (pthread_create(&manager_threads[i], NULL, manager_thread, arg) != 0) {
-        fprintf(stderr, "Error creating thread\n");
-        free(arg);
-        exit(EXIT_FAILURE);
-    }
-  }
-
-  pthread_join(main_thread, NULL);
-
-  for (int i = 0; i < MAX_SESSION_COUNT; i++){
-    pthread_join(manager_threads[i], NULL);
-  }
-
-  free(manager_threads);
+  close(f_server);
 
   kvs_terminate();
-
-// COMEJADSFAJSDFÇKADSFÇASJDFASDJFOADSJFAJD
 
   return 0;
 }

@@ -46,7 +46,18 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
 
   printf("preencheu sessionMessage: %s", sessionMessage.req_pipe_path);
   // ssize_t n = write_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
-  write_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
+  // write_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
+
+  ssize_t bytes_written = write_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
+
+
+        // Print raw data received
+    printf("Raw data WRITTEN (%zd bytes):\n", bytes_written);
+    for (ssize_t i = 0; i < bytes_written; i++) {
+        printf("%02x ", ((unsigned char *)&sessionMessage)[i]);
+    }
+    printf("\n");
+
 
   // if (n != sizeof(sessionProtoMessage)) {
   //   exit(1);
