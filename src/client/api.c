@@ -17,7 +17,7 @@
 char req_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], resp_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], notif_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1];
 
 int f_req, f_resp,f_notif, f_server, session_id;
-sessionRqst sessionRQST;
+sessionProtoMessage sessionMessage;
 
 
 int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
@@ -35,17 +35,17 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
 
   if ((f_server = open(server_pipe_path, O_WRONLY)) < 0) exit(1);
 
-  sessionRQST.result = '1';
-  memset(sessionRQST.req_pipe_path, 0, MAX_PIPE_PATH_LENGTH);
-  memset(sessionRQST.resp_pipe_path, 0, MAX_PIPE_PATH_LENGTH);
-  memset(sessionRQST.notif_pipe_path, 0, MAX_PIPE_PATH_LENGTH);
-  strncpy(sessionRQST.req_pipe_path, req_pipe_path, MAX_PIPE_PATH_LENGTH);
-  strncpy(sessionRQST.resp_pipe_path, resp_pipe_path, MAX_PIPE_PATH_LENGTH);
-  strncpy(sessionRQST.notif_pipe_path, notif_pipe_path, MAX_PIPE_PATH_LENGTH);
+  sessionMessage.opcode = '1';
+  memset(sessionMessage.req_pipe_path, 0, MAX_PIPE_PATH_LENGTH);
+  memset(sessionMessage.resp_pipe_path, 0, MAX_PIPE_PATH_LENGTH);
+  memset(sessionMessage.notif_pipe_path, 0, MAX_PIPE_PATH_LENGTH);
+  strncpy(sessionMessage.req_pipe_path, req_pipe_path, MAX_PIPE_PATH_LENGTH);
+  strncpy(sessionMessage.resp_pipe_path, resp_pipe_path, MAX_PIPE_PATH_LENGTH);
+  strncpy(sessionMessage.notif_pipe_path, notif_pipe_path, MAX_PIPE_PATH_LENGTH);
 
 
-  ssize_t n = write_all(f_server, (void *)&sessionRQST, sizeof(sessionRQST));
-  if (n != sizeof(sessionRQST)) {
+  ssize_t n = write_all(f_server, (void *)&sessionMessage, sizeof(sessionMessage));
+  if (n != sizeof(sessionMessage)) {
     exit(1);
   }
 
@@ -55,7 +55,7 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
 void read_response() {
 
   // read response in response pipe
-    if ((f_resp = open(sessionRQST.resp_pipe_path, O_RDONLY)) < 0) exit(1);
+    if ((f_resp = open(sessionMessage.resp_pipe_path, O_RDONLY)) < 0) exit(1);
 
 
   char response[MAX_STRING_SIZE]; // Adjust size based on expected response length
@@ -103,8 +103,8 @@ int kvs_disconnect(void) {
 int kvs_subscribe_unsubscribe(const char *key, int mode) {
   // send subscribe message to request pipe 
 
-    const char *req_pipe_path = sessionRQST.req_pipe_path; 
-    // const char *resp_pipe_path = sessionRQST.resp_pipe_path; // Response pipe path
+    const char *req_pipe_path = sessionMessage.req_pipe_path; 
+    // const char *resp_pipe_path = sessionMessage.resp_pipe_path; // Response pipe path
 
     if ((f_req = open(req_pipe_path, O_WRONLY)) < 0) exit (1);
 
@@ -136,7 +136,7 @@ void *read_Thread() {
 
 
   // read response in response pipe
-  if ((f_notif = open(sessionRQST.notif_pipe_path, O_RDONLY)) < 0) exit(1);
+  if ((f_notif = open(sessionMessage.notif_pipe_path, O_RDONLY)) < 0) exit(1);
 
   char response[MAX_STRING_SIZE]; // Adjust size based on expected response length
   ssize_t resp_len = read_all(f_resp, response, sizeof(response) - 1, NULL); // Leave space for null terminator
