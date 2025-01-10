@@ -25,7 +25,9 @@ struct SharedData {
   pthread_mutex_t directory_mutex;
 };
 
-sessionRqst buf[MAX_BUFFER_SIZE];
+// sessionRqst buf[MAX_BUFFER_SIZE];
+sessionProtoMessage buf[MAX_BUFFER_SIZE];
+
 int f_server;
 int session_num = 0;
 
@@ -78,6 +80,7 @@ static int entry_files(const char *dir, struct dirent *entry, char *in_path,
 
 void *main_Thread() {
     sessionProtoMessage sessionMessage;
+    // sessionRQST new_sessionRQST;
     puts("entrou na mainnnnnn_thread funcao");
     while (1) {
         // ssize_t n = read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
@@ -92,21 +95,24 @@ void *main_Thread() {
        read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
 
         puts("fez o read");
-      
         // if (n != sizeof(sessionMessage)) {
         //     exit(1);
         // }
 
+
         // if (sessionMessage.opcode == '0') {
-            pthread_mutex_lock(&mutexBuffer);
-            sem_wait(&semEmpty); // Espera que haja espaço no buffer
-           
-            // Adiciona o item ao buffer
-            memcpy(&buf[count], &sessionMessage, sizeof(sessionRqst));
-            count++;
-            pthread_mutex_unlock(&mutexBuffer); // Sai da seção crítica
-            sem_post(&semFull); // Indica que há um item disponível no buffer
+        pthread_mutex_lock(&mutexBuffer);
+        sem_wait(&semEmpty); // Espera que haja espaço no buffer
         
+        // Adiciona o item ao buffer
+        memcpy(&buf[count], &sessionMessage, sizeof(sessionProtoMessage));
+        puts("MEMCOPY MADE");
+
+        printf("este é o opcdoe: %c", buf[count].opcode);
+        count++;
+        pthread_mutex_unlock(&mutexBuffer); // Sai da seção crítica
+        sem_post(&semFull); // Indica que há um item disponível no buffer
+        puts("sai do lock");
     }
     printf("saiu do while");
 }
@@ -142,7 +148,7 @@ int write_to_resp_pipe(int f_pipe, char op_code, char result) {
 
 
 void *manager_thread(){
-  sessionRqst sessionRQST;
+  sessionProtoMessage sessionMessage;
   char req_pipe_path[MAX_BUFFER_SIZE+1], resp_pipe_path[MAX_BUFFER_SIZE+1], notif_pipe_path[MAX_BUFFER_SIZE+1];
   int f_req, f_resp;
   int f_notif = 0;
@@ -158,9 +164,9 @@ void *manager_thread(){
 
 
 
-    memcpy(&sessionRQST, &buf[count], sizeof(sessionRQST));
+    memcpy(&sessionMessage, &buf[count], sizeof(sessionProtoMessage));
 
-    
+
     count--;
     pthread_mutex_unlock(&mutexBuffer);
     sem_post(&semEmpty);
@@ -168,9 +174,9 @@ void *manager_thread(){
     memset(req_pipe_path,0,MAX_BUFFER_SIZE+1);
     memset(resp_pipe_path,0,MAX_BUFFER_SIZE+1);
     memset(notif_pipe_path,0,MAX_BUFFER_SIZE+1);
-    strncpy(req_pipe_path,sessionRQST.req_pipe_path,MAX_BUFFER_SIZE);
-    strncpy(resp_pipe_path,sessionRQST.resp_pipe_path,MAX_BUFFER_SIZE);
-    strncpy(notif_pipe_path,sessionRQST.notif_pipe_path,MAX_BUFFER_SIZE);
+    strncpy(req_pipe_path,sessionMessage.req_pipe_path,MAX_BUFFER_SIZE);
+    strncpy(resp_pipe_path,sessionMessage.resp_pipe_path,MAX_BUFFER_SIZE);
+    strncpy(notif_pipe_path,sessionMessage.notif_pipe_path,MAX_BUFFER_SIZE);
 
     if ((f_resp = open (resp_pipe_path, O_WRONLY)) < 0) exit(1);
     puts("abriu resp pipe");
