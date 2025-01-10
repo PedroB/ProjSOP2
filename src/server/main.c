@@ -100,9 +100,6 @@ void *main_Thread() {
 
 ///////////////////////////////////////////////////////////////////////////////
 int write_to_resp_pipe(int f_pipe, char op_code, char result) {
-  
-
-   
 
     char msg[MAX_STRING_SIZE];
     int msg_len = snprintf(msg, sizeof(msg), "%c%c", op_code, result);
@@ -161,12 +158,14 @@ void *manager_thread(){
 
     if ((f_req = open (req_pipe_path, O_RDONLY)) < 0) exit(1);
 
+    if ((f_notif = open (notif_pipe_path, O_RDONLY)) < 0) exit(1);
+
     char result;
     int atending_client = 1;
   while (atending_client) {
     
 
-    switch (get_next(f_req)) {
+    switch (get_next2(f_req)) {
         case CMD_DISCONNECT:
             if (kvs_disconnect(f_notif) != 0) {
                 result = '1';
@@ -505,10 +504,14 @@ int main(int argc, char **argv) {
     active_backups--;
   }
 
-    unlink(argv[4]);
+
+  // char reg_pipe_path[256] = "/tmp/reg";
+      unlink(argv[4]);
+  // strncat(reg_pipe_path, argv[4], strlen(argv[4]) * sizeof(char));
     if (mkfifo (argv[4], 0777) < 0)
     exit (1);
 
+    
   if ((f_server = open (argv[4], O_RDWR)) < 0) exit(1);
 
   pthread_mutex_init(&mutexBuffer, NULL);
@@ -517,26 +520,35 @@ int main(int argc, char **argv) {
 
 
   pthread_t main_thread;
-  pthread_t manager_thread[MAX_SESSION_COUNT];
+  // pthread_t manager_thread[MAX_SESSION_COUNT];
   if (pthread_create(&main_thread, NULL, main_Thread, NULL) != 0) {
       fprintf(stderr, "Erro ao criar thread");
       exit(EXIT_FAILURE);
   }
 
-  for (int i = 0; i< MAX_SESSION_COUNT; i++){
-    if (pthread_create(&manager_thread[i], NULL, manager_thread, &i) != 0) {
-      fprintf(stderr, "Erro ao criar thread");
-      exit(EXIT_FAILURE);
+    pthread_t *manager_threads = malloc(MAX_SESSION_COUNT * sizeof(pthread_t));
+
+  for (int i = 0; i < MAX_SESSION_COUNT; i++) {
+    int *arg = malloc(sizeof(int)); // Dynamically allocate memory
+    if (arg == NULL) {
+        fprintf(stderr, "Failed to allocate memory\n");
+        exit(EXIT_FAILURE);
+    }
+    *arg = i; // Store the index value
+    if (pthread_create(&manager_threads[i], NULL, manager_thread, arg) != 0) {
+        fprintf(stderr, "Error creating thread\n");
+        free(arg);
+        exit(EXIT_FAILURE);
     }
   }
 
   pthread_join(main_thread, NULL);
 
   for (int i = 0; i < MAX_SESSION_COUNT; i++){
-    pthread_join(manager_thread[i], NULL);
+    pthread_join(manager_threads[i], NULL);
   }
 
-  
+  free(manager_threads);
 
   kvs_terminate();
 

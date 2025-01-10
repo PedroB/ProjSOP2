@@ -194,33 +194,74 @@ int parse_delay(int fd, unsigned int *delay) {
   return 0;
 }
 
+// int parse_key(int fd, char *key, size_t max_size) {
+//     char buffer[max_size];
+
+//     // Ler do descritor de arquivo
+//     ssize_t bytes_read = read(fd, buffer, max_size - 1);
+//     if (bytes_read <= 0) {
+//         return 1; // Erro ou nada lido
+//     }
+
+//     buffer[bytes_read] = '\0'; // Garantir terminação da string
+
+//     // Procurar por parênteses e extrair a chave
+//     char *start = strchr(buffer, '[');
+//     char *end = strchr(buffer, ']');
+
+//     if (!start || !end || start >= end) {
+//         return 1; // Parênteses inválidos ou chave ausente
+//     }
+
+//     // Copiar apenas a chave entre os parênteses
+//     size_t key_length = end - start - 1;
+//     if (key_length >= max_size) {
+//         return 1; // A chave excede o tamanho permitido
+//     }
+
+//     strncpy(key, start + 1, key_length);
+//     key[key_length] = '\0'; // Adicionar terminação da string
+
+//     return 0; // Sucesso
+// }
+
+
+
+/////////////////////////////////
 int parse_key(int fd, char *key, size_t max_size) {
     char buffer[max_size];
 
-    // Ler do descritor de arquivo
+    // Read from the file descriptor
     ssize_t bytes_read = read(fd, buffer, max_size - 1);
     if (bytes_read <= 0) {
-        return 1; // Erro ou nada lido
+        return 1; // Error or nothing read
     }
 
-    buffer[bytes_read] = '\0'; // Garantir terminação da string
+    buffer[bytes_read] = '\0'; // Null-terminate the string
 
-    // Procurar por parênteses e extrair a chave
+    // Look for brackets and extract the key
     char *start = strchr(buffer, '[');
     char *end = strchr(buffer, ']');
 
     if (!start || !end || start >= end) {
-        return 1; // Parênteses inválidos ou chave ausente
+        return 1; // Invalid brackets or missing key
     }
 
-    // Copiar apenas a chave entre os parênteses
-    size_t key_length = end - start - 1;
+    // Calculate key length
+    ptrdiff_t key_length_signed = end - start - 1;
+    if (key_length_signed < 0) {
+        return 1; // Invalid key length
+    }
+    size_t key_length = (size_t)key_length_signed;
+
+    // Ensure the key fits within max_size
     if (key_length >= max_size) {
-        return 1; // A chave excede o tamanho permitido
+        return 1; // Key exceeds allowed size
     }
 
+    // Copy the key and null-terminate it
     strncpy(key, start + 1, key_length);
-    key[key_length] = '\0'; // Adicionar terminação da string
+    key[key_length] = '\0';
 
-    return 0; // Sucesso
+    return 0; // Success
 }

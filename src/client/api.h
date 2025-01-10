@@ -32,5 +32,5 @@ int kvs_unsubscribe(const char *key);
 
 int kvs_subscribe_unsubscribe(const char *key, int mode);
 
-void *read_Thread(void *arg);
+void *read_Thread();
 #endif // CLIENT_API_H

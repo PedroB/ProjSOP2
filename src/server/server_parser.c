@@ -6,9 +6,9 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "common/constants.h"
-#include "common/io.h"
-#include "common/constants.h"
+// #include "common/constants.h"
+// #include "common/io.h"
+// #include "common/constants.h"
 #include "server_parser.h"
 
 
@@ -25,5 +25,7 @@ enum Server_Command get_next2(int f_req) {
     case '4':
       return CMD_UNSUBSCRIBE;
 
+    default:
+        return CMD_DISCONNECT; // Fallback for unknown opcodes
   }
 }

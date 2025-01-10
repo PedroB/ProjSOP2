@@ -14,7 +14,7 @@ endif
 
 all: src/server/kvs src/client/client
 
-src/server/kvs: src/server/main.c src/server/operations.o src/server/kvs.o src/server/io.o src/server/parser.o src/common/io.o
+src/server/kvs: src/server/main.c src/server/server_parser.c src/server/operations.o src/server/kvs.o src/server/io.o src/server/parser.o src/common/io.o
 	$(CC) $(CFLAGS) $(SLEEP) -o $@ $^
 
 

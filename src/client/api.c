@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 
 #include <string.h>
-#include <sys/_types/_ssize_t.h>
+// #include <sys/_types/_ssize_t.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,7 +104,7 @@ int kvs_subscribe_unsubscribe(const char *key, int mode) {
   // send subscribe message to request pipe 
 
     const char *req_pipe_path = sessionRQST.req_pipe_path; 
-    const char *resp_pipe_path = sessionRQST.resp_pipe_path; // Response pipe path
+    // const char *resp_pipe_path = sessionRQST.resp_pipe_path; // Response pipe path
 
     if ((f_req = open(req_pipe_path, O_WRONLY)) < 0) exit (1);
 
@@ -129,12 +129,10 @@ int kvs_subscribe_unsubscribe(const char *key, int mode) {
     read_response();
   return 0;
 }
-//////////////////////////////////////////////////////////////////////////////////////
-
 
 //////////////////////////////////////////////////////////////////////////////////////
 // read from notif pipe and print to stdout
-void *read_Thread(void *arg) {
+void *read_Thread() {
 
 
   // read response in response pipe
@@ -150,5 +148,6 @@ void *read_Thread(void *arg) {
 
   printf("%s", response);
   close(f_notif);
+  return NULL;
 }
 
