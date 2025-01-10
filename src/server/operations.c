@@ -10,7 +10,7 @@
 
 #include "constants.h"
 #include "io.h"
-#include "src/server/kvs.h"
+#include "kvs.h"
 #include "src/common/protocol.h"
 
 static struct HashTable *kvs_table = NULL;

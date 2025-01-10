@@ -85,7 +85,7 @@ void *main_Thread() {
             exit(1);
         }
 
-        if (sessionRQST.result == '0') {
+        if (sessionRQST.opcode == '0') {
             pthread_mutex_lock(&mutexBuffer);
             sem_wait(&semEmpty); // Espera que haja espaço no buffer
            
