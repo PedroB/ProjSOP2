@@ -45,6 +45,7 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
   strncpy(sessionMessage.notif_pipe_path, notif_pipe_path, MAX_PIPE_PATH_LENGTH);
 
   printf("preencheu sessionMessage: %s", sessionMessage.req_pipe_path);
+
   // ssize_t n = write_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
   // write_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
 

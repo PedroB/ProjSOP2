@@ -84,7 +84,6 @@ void *main_Thread() {
     puts("entrou na mainnnnnn_thread funcao");
     while (1) {
         // ssize_t n = read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
-    //    ssize_t read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
 
     // printf("Raw data READ (%zd bytes):\n", bytes_read);
     // for (ssize_t i = 0; i < bytes_read; i++) {
@@ -92,7 +91,10 @@ void *main_Thread() {
     // }
     // printf("\n");
 
-       read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
+      //  ssize_t result = read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
+      //  printf("Result of read_all: %zd\n", result);
+
+      ssize_t result = read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
 
         puts("fez o read");
         // if (n != sizeof(sessionMessage)) {
@@ -101,8 +103,8 @@ void *main_Thread() {
 
 
         // if (sessionMessage.opcode == '0') {
-        pthread_mutex_lock(&mutexBuffer);
-        sem_wait(&semEmpty); // Espera que haja espaço no buffer
+        // pthread_mutex_lock(&mutexBuffer);
+        // sem_wait(&semEmpty); // Espera que haja espaço no buffer
         
         // Adiciona o item ao buffer
         memcpy(&buf[count], &sessionMessage, sizeof(sessionProtoMessage));
@@ -110,8 +112,8 @@ void *main_Thread() {
 
         printf("este é o opcdoe: %c", buf[count].opcode);
         count++;
-        pthread_mutex_unlock(&mutexBuffer); // Sai da seção crítica
-        sem_post(&semFull); // Indica que há um item disponível no buffer
+        // pthread_mutex_unlock(&mutexBuffer); // Sai da seção crítica
+        // sem_post(&semFull); // Indica que há um item disponível no buffer
         puts("sai do lock");
     }
     printf("saiu do while");
