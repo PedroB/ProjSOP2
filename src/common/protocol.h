@@ -29,4 +29,10 @@ typedef struct {
     char notif_pipe_path[MAX_PIPE_PATH_LENGTH];
 } sessionProtoMessage;
 
+
+typedef struct {
+    char opcode;
+    char key[MAX_STRING_SIZE];
+} subRqst;
+
 #endif // COMMON_PROTOCOL_H

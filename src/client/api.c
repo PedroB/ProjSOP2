@@ -14,7 +14,7 @@
 #include <stdlib.h>
 
 
-// char req_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], resp_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], notif_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1];
+ char req_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], resp_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1], notif_Pipe_Path[MAX_PIPE_PATH_LENGTH + 1];
 
 int f_req, f_resp,f_notif, f_server;
 sessionProtoMessage sessionMessage;
@@ -49,21 +49,17 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
   // ssize_t n = write_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
   // write_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
 
-  ssize_t bytes_written = write_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
+  write(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
+  
+   if ((f_resp = open(sessionMessage.resp_pipe_path, O_RDONLY)) < 0) exit(1);
+   read_response();
 
 
-    //     // Print raw data received
-    // printf("Raw data WRITTEN (%zd bytes):\n", bytes_written);
-    // for (ssize_t i = 0; i < bytes_written; i++) {
-    //     printf("%02x ", ((unsigned char *)&sessionMessage)[i]);
-    // }
-    // printf("\n");
-
+   if ((f_req = open(sessionMessage.req_pipe_path, O_WRONLY)) < 0) exit(1);
 
   // if (n != sizeof(sessionProtoMessage)) {
   //   exit(1);
   // }
-  read_response();
   puts("acabou connect");
 
   return 0;
@@ -72,12 +68,12 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
 void read_response() {
 
   // read response in response pipe
-    if ((f_resp = open(sessionMessage.resp_pipe_path, O_RDONLY)) < 0) exit(1);
+   // if ((f_resp = open(sessionMessage.resp_pipe_path, O_RDONLY)) < 0) exit(1);
     puts("response is...");
 
   char response[2]; // Adjust size based on expected response length
   // ssize_t resp_len = read_all(f_resp, response, 2, NULL); // Leave space for null terminator
-  read_all(f_resp, response, 2, NULL); // Leave space for null terminator
+  read(f_resp, response, 2); // Leave space for null terminator
 
   // if (resp_len < 0) {
   //     perror("Error reading from response pipe");
@@ -87,7 +83,6 @@ void read_response() {
   // response[2] = '\0';
 
 	printf("Server returned %c for operation: %c", response[1], response[0]);
-  close(f_resp);
 }
 
 int kvs_disconnect(void) {
@@ -162,14 +157,22 @@ int kvs_disconnect(void) {
 // }
 /////////////////////////////////////////////////////////////////////////////
 int kvs_subscribe_unsubscribe(const char *key, char mode) {
+
+    // subRqst subRQST;
+
     puts("entrou subs!!!!!");
 
     printf("Key: %s, Mode: %c\n", key, mode);
 
+    sessionMessage.opcode = mode;
+    // subRQST.opcode = mode;
+    // strncpy(subRQST.key, key, MAX_STRING_SIZE - 1); // Copy the key into subRQST.key
+    // subRQST.key[MAX_STRING_SIZE - 1] = '\0';       // Ensure null-termination
+
 
     // Open the request pipe for writing
-    if ((f_req = open(sessionMessage.req_pipe_path, O_WRONLY)) < 0) exit(1);
-    printf("Opening request pipe: %s\n", sessionMessage.req_pipe_path);
+    // if ((f_req = open(sessionMessage.req_pipe_path, O_WRONLY)) < 0) exit(1);
+    // printf("Opening request pipe: %s\n", sessionMessage.req_pipe_path);
 
 
     // Prepare the message with format: "OP_CODE|key"
@@ -188,21 +191,30 @@ int kvs_subscribe_unsubscribe(const char *key, char mode) {
     printf("Prepared message: %s (length: %zu)\n", msg, msg_len);
 
     // Write the message to the request pipe
-    ssize_t n = write_all(f_req, msg, msg_len);
-    if (n < 0) {
-        fprintf(stderr, "write_all failed\n");
-        close(f_req);
-        return 1;
-    }
+    // ssize_t n = write_all(f_req, msg, msg_len);
+    write(f_req, msg, msg_len );
+
+
+
+    // if (n < 0) {
+    //     fprintf(stderr, "write_all failed\n");
+    //     close(f_req);
+    //     return 1;
+    // }
 
     // Debug: Check if the message was written successfully
     printf("pediu subscribe: %s\n", msg);
 
     // Close the request pipe
-    close(f_req);
+ 
 
     // Read the response (assuming this is handled elsewhere)
-    read_response();
+  //   char resp[2];
+
+  // ssize_t n = read(f_resp,resp , 2);
+  // printf("uuuuuuuuuu%c",resp[0]);
+  // if (n != (ssize_t) 2) {puts("client nao leu do resp bem");};
+   read_response();
     return 0;
 }
 
@@ -214,7 +226,6 @@ void *read_Thread() {
   // read from notif pipe
   if ((f_notif = open(sessionMessage.notif_pipe_path, O_RDONLY)) < 0) exit(1);
 
-
   char response[MAX_STRING_SIZE]; // Adjust size based on expected response length
   ssize_t resp_len = read_all(f_resp, response, sizeof(response) - 1, NULL); // Leave space for null terminator
   if (resp_len < 0) {
@@ -224,7 +235,7 @@ void *read_Thread() {
   response[resp_len] = '\0';
 
   printf("%s", response);
-  close(f_notif);
+
   return NULL;
 }
 

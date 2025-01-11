@@ -187,6 +187,7 @@ void kvs_wait(unsigned int delay_ms) {
 ///////////////////////////////////////////////////////////////////////////////////
 int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_notif, char mode) {
 
+    puts("ENTROU NO SUBSCRIBE");
    if (kvs_table == NULL) {
     fprintf(stderr, "KVS state must be initialized\n");
     return 1;
@@ -196,6 +197,7 @@ int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_notif, char mode) 
 
   if(mode == OP_CODE_SUBSCRIBE) {
     if (execute_subscribe(kvs_table, key, f_notif) != 0) {
+      puts("retornou 1 no kvs_subs, isso é mau");
       return 1;
 
   } else if (mode == OP_CODE_UNSUBSCRIBE) {

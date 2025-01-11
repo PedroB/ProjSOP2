@@ -228,6 +228,8 @@ void free_table(HashTable *ht) {
 
 
 int add_notif_pipe(NotifPipeNode **head_node, int notif_pipe) {
+       puts("começou add_notif");
+
     if (!head_node || !notif_pipe) {
         return 1; // Erro: Entrada inválida
     }
@@ -248,6 +250,7 @@ int add_notif_pipe(NotifPipeNode **head_node, int notif_pipe) {
     // Inserir o novo nó no início da lista
     new_node->next = *head_node;
     *head_node = new_node;
+    puts("acabout add_notif");
 
     return 0;
 }
@@ -293,7 +296,7 @@ int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe) {
     //     fprintf(stderr, "Erro: Parâmetros inválidos.\n");
     //     return 1;
     // }
-
+  puts("entrou execute_subs");
     int index = hash(key); // Calcular o índice na tabela hash
     KeyNode *keyNode = ht->table[index];
 
@@ -305,7 +308,7 @@ int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe) {
 
             // Adicionar o pipe à lista de notificação
             if (add_notif_pipe(&keyNode->notif_pipes_head, notif_pipe) != 0) {
-               
+               puts("correu mal o add_notif, nao subscreveu");
                 return 1;
             }
 

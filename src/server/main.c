@@ -149,23 +149,28 @@ void *main_Thread() {
 ///////////////////////////////////////////////////////////////////////////////
 int write_to_resp_pipe(int f_pipe, char op_code, char result) {
 
-    char msg[MAX_STRING_SIZE];
+    // char msg[MAX_STRING_SIZE];
 
     // snprintf(msg, MAX_STRING_SIZE, "%c%c", op_code, result);
+    puts("vai tentar escrever para o resp_pipe");
 
 
-    int msg_len = snprintf(msg, sizeof(msg), "%c%c", op_code, result);
+        const char msg[2] = {op_code, result};
+
+    // int msg_len = snprintf(msg, sizeof(msg), "%c%c", op_code, result);
+      // snprintf(msg, sizeof(msg), "%c%c", op_code, result);
+
 
     // Check if snprintf succeeded
-    if (msg_len < 0 || (size_t)msg_len >= sizeof(msg)) {
-        fprintf(stderr, "Error: message too large or formatting failed\n");
-        close(f_pipe);
-        return -1;
-    }
+    // if (msg_len < 0 || (size_t)msg_len >= sizeof(msg)) {
+    //     fprintf(stderr, "Error: message too large or formatting failed\n");
+    //     close(f_pipe);
+    //     return -1;
+    // }
 
     // ssize_t n = write_all(f_pipe, msg,(size_t) 2);
     // write_all(f_pipe, msg,(size_t) 2);
-        write_all(f_pipe, msg,(size_t) 2);
+        write(f_pipe, msg, 2);
 
 
     // if (n != msg_len) {
@@ -227,14 +232,13 @@ void *manager_thread(){
     printf("este e o resp pipe que vai abrir: %s", sessionMessage.resp_pipe_path);
 
     // if ((f_resp = open (resp_pipe_path, O_WRONLY)) < 0) exit(1);
-      if ((f_resp = open (buf[count].resp_pipe_path, O_WRONLY)) < 0) exit(1);
+      if ((f_resp = open (sessionMessage.resp_pipe_path, O_WRONLY)) < 0) exit(1);
     puts("abriu resp pipe");
     // const char *message = "11"; 
     const char message[2] = {'1', '1'};
     // ssize_t n = write_all(f_resp, message, strlen(message)); // Write the string to the pipe
     // write_all(f_resp, message, 2); 
   write(f_resp, message, 2);
-    
     puts("fez write ");
 
     // if (n != (ssize_t)strlen(message)) {
@@ -254,11 +258,11 @@ void *manager_thread(){
     switch (get_next2(f_req)) {
         case CMD_DISCONNECT:
             if (kvs_disconnect(notif_pipe_path) != 0) {
-                result = '1';
+                result = '0';
                 write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
             atending_client = 0; // Finaliza o atendimento do cliente
             } else {
-                result = '0';
+                result = '1';
                 write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
             atending_client = 0; // Finaliza o atendimento do cliente
             }
@@ -274,15 +278,32 @@ void *manager_thread(){
             } else {
                 printf("key is: %s\n", key);
                 if (kvs_subs_or_unsubs(key, f_notif, OP_CODE_SUBSCRIBE) != 0) {
-                    result = '1'; // Erro ao subscrever
-                    write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+                    result = '0'; // Erro ao subscrever
+                    puts("kvs subs retornou 1");
+                    // const char msg[2] = { OP_CODE_SUBSCRIBE, result};
+                    char msg[2] = { '3', '0'};
+                  
+                    //  const char message[2] = {'1', '1'};
+                    //   write(f_resp, message, 2);
+
+
+                    write(f_resp, key, sizeof(key));
+                  puts("a seguir do write");
+                    
+                    // write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
                     atending_client = 0;
                 } else {
-                    result = '0'; // Sucesso
-                    write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+                    result = '1'; // Sucesso
+                    const char msg[2] = {  OP_CODE_SUBSCRIBE, result};
+                    puts("antes do write");
+                    write(f_resp, msg, 2);
+                    // write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+                    puts("depois do write");
+
                     atending_client = 0;
                 }
             }
+            
             
             break;
 
@@ -293,11 +314,11 @@ void *manager_thread(){
                 result = 1; // Erro ao ler a chave
             } else {
                 if (kvs_subs_or_unsubs(key, f_notif, OP_CODE_UNSUBSCRIBE) != 0) {
-                    result = '1'; // Erro ao cancelar subscrição
+                    result = '0'; // Erro ao cancelar subscrição
                     write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
             atending_client = 0; // Finaliza o atendimento do cliente
                 } else {
-                    result = '0'; // Sucesso
+                    result = '1'; // Sucesso
                     write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
             atending_client = 0; // Finaliza o atendimento do cliente
                 }
