@@ -129,7 +129,7 @@ void *main_Thread() {
       // Adiciona o item ao buffer
       pthread_mutex_lock(&mutexBuffer);
       while (count == MAX_BUFFER_SIZE) pthread_cond_wait(&podeProd,&mutexBuffer);
-      memcpy(&buf[count], &sessionMessage, sizeof(sessionProtoMessage));
+      memcpy(&buf[prodptr], &sessionMessage, sizeof(sessionProtoMessage));
             printf("este é o opcdoe: %c\n", buf[count].opcode);
 
       printf("count = %d\n", count);
@@ -163,12 +163,16 @@ int write_to_resp_pipe(int f_pipe, char op_code, char result) {
         return -1;
     }
 
-    ssize_t n = write_all(f_pipe, msg,(size_t) 2);
-    if (n != msg_len) {
-        perror("Error writing to named pipe");
-        close(f_pipe);
-        return -1;
-    }
+    // ssize_t n = write_all(f_pipe, msg,(size_t) 2);
+    // write_all(f_pipe, msg,(size_t) 2);
+        write_all(f_pipe, msg,(size_t) 2);
+
+
+    // if (n != msg_len) {
+    //     perror("Error writing to named pipe");
+    //     close(f_pipe);
+    //     return -1;
+    // }
 
     close(f_pipe);
 
@@ -194,7 +198,7 @@ void *manager_thread(){
     
     pthread_mutex_lock(&mutexBuffer);
     while (count == 0) pthread_cond_wait(&podeCons,&mutexBuffer);
-    memcpy(&sessionMessage, &buf[count], sizeof(sessionProtoMessage));
+    memcpy(&sessionMessage, &buf[consptr], sizeof(sessionProtoMessage));
 
     consptr++; if (consptr == MAX_BUFFER_SIZE) consptr = 0;
     count--;
@@ -225,10 +229,11 @@ void *manager_thread(){
     // if ((f_resp = open (resp_pipe_path, O_WRONLY)) < 0) exit(1);
       if ((f_resp = open (buf[count].resp_pipe_path, O_WRONLY)) < 0) exit(1);
     puts("abriu resp pipe");
-    const char *message = "11"; 
+    // const char *message = "11"; 
+    const char message[2] = {'1', '1'};
     // ssize_t n = write_all(f_resp, message, strlen(message)); // Write the string to the pipe
-    write_all(f_resp, message, sizeof(message)); // Write the string to the pipe
-
+    // write_all(f_resp, message, 2); 
+  write(f_resp, message, 2);
     
     puts("fez write ");
 
@@ -267,6 +272,7 @@ void *manager_thread(){
             if (read(f_req, key, MAX_STRING_SIZE) <= 0) {
                 result = '1'; // Erro ao ler a chave
             } else {
+                printf("key is: %s\n", key);
                 if (kvs_subs_or_unsubs(key, f_notif, OP_CODE_SUBSCRIBE) != 0) {
                     result = '1'; // Erro ao subscrever
                     write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);

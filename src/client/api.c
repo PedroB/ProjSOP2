@@ -63,6 +63,7 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
   // if (n != sizeof(sessionProtoMessage)) {
   //   exit(1);
   // }
+  read_response();
   puts("acabou connect");
 
   return 0;
@@ -72,7 +73,7 @@ void read_response() {
 
   // read response in response pipe
     if ((f_resp = open(sessionMessage.resp_pipe_path, O_RDONLY)) < 0) exit(1);
-
+    puts("response is...");
 
   char response[2]; // Adjust size based on expected response length
   // ssize_t resp_len = read_all(f_resp, response, 2, NULL); // Leave space for null terminator

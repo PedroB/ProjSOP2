@@ -289,10 +289,10 @@ int remove_notif_pipe(NotifPipeNode **head_node, int notif_pipe) {
 
 ///////////////////////////////////////////////////////////////////////////////
 int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe) {
-    if (!key || !notif_pipe || !ht) {
-        fprintf(stderr, "Erro: Parâmetros inválidos.\n");
-        return 1;
-    }
+    // if (!key || !notif_pipe || !ht) {
+    //     fprintf(stderr, "Erro: Parâmetros inválidos.\n");
+    //     return 1;
+    // }
 
     int index = hash(key); // Calcular o índice na tabela hash
     KeyNode *keyNode = ht->table[index];

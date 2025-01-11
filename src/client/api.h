@@ -33,4 +33,6 @@ int kvs_unsubscribe(const char *key);
 int kvs_subscribe_unsubscribe(const char *key, char mode);
 
 void *read_Thread();
+void read_response();
+
 #endif // CLIENT_API_H
