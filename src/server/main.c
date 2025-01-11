@@ -27,6 +27,8 @@ struct SharedData {
 
 // sessionRqst buf[MAX_BUFFER_SIZE];
 sessionProtoMessage buf[MAX_BUFFER_SIZE];
+pthread_cond_t podeProd, podeCons;
+
 
 int f_server;
 int session_num = 0;
@@ -78,10 +80,26 @@ static int entry_files(const char *dir, struct dirent *entry, char *in_path,
   return 0;
 }
 
+//////////////////////////////////////////////////////////
+
+void apanha_usr1(){
+  sessionProtoMessage sessionMessage;
+  sessionMessage.opcode = '1';
+  write(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
+  signal (SIGUSR1, apanha_usr1);
+}
+
+/////////////////////////////////////////////////////////
 void *main_Thread() {
-    sessionProtoMessage sessionMessage;
-    // sessionRQST new_sessionRQST;
-    puts("entrou na mainnnnnn_thread funcao");
+
+  signal (SIGUSR1, apanha_usr1);
+  sessionProtoMessage sessionMessage;
+
+  pthread_mutex_lock(&mutexBuffer);
+  count = 0;
+  prodptr = 0;
+  pthread_mutex_unlock(&mutexBuffer);
+
     while (1) {
         // ssize_t n = read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
 
@@ -94,9 +112,10 @@ void *main_Thread() {
       //  ssize_t result = read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
       //  printf("Result of read_all: %zd\n", result);
 
-      ssize_t result = read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
+      read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
 
-        puts("fez o read");
+      puts("fez o read");
+
         // if (n != sizeof(sessionMessage)) {
         //     exit(1);
         // }
@@ -106,19 +125,27 @@ void *main_Thread() {
         // pthread_mutex_lock(&mutexBuffer);
         // sem_wait(&semEmpty); // Espera que haja espaço no buffer
         
-        // Adiciona o item ao buffer
-        memcpy(&buf[count], &sessionMessage, sizeof(sessionProtoMessage));
-        puts("MEMCOPY MADE");
 
-        printf("este é o opcdoe: %c", buf[count].opcode);
-        count++;
+      // Adiciona o item ao buffer
+      pthread_mutex_lock(&mutexBuffer);
+      while (count == MAX_BUFFER_SIZE) pthread_cond_wait(&podeProd,&mutexBuffer);
+      memcpy(&buf[count], &sessionMessage, sizeof(sessionProtoMessage));
+            printf("este é o opcdoe: %c\n", buf[count].opcode);
+
+      printf("count = %d\n", count);
+      prodptr++; if(prodptr==MAX_BUFFER_SIZE) prodptr = 0;
+      count++;
+      pthread_cond_signal(&podeCons);
+      pthread_mutex_unlock(&mutexBuffer);
+
+
+      puts("MEMCOPY MADE");
+
+      // count++;
         // pthread_mutex_unlock(&mutexBuffer); // Sai da seção crítica
         // sem_post(&semFull); // Indica que há um item disponível no buffer
-        puts("sai do lock");
     }
-    printf("saiu do while");
 }
-
 ///////////////////////////////////////////////////////////////////////////////
 int write_to_resp_pipe(int f_pipe, char op_code, char result) {
 
@@ -159,19 +186,31 @@ void *manager_thread(){
 
   puts("passou a bola a manager thread");
 
-  printf("req PIPE PATH DO PROD CONS: %s", buf[count].req_pipe_path);
   while(1){
+    // pthread_mutex_lock(&mutexBuffer);
+    // sem_wait(&semFull);
+
+    puts("entrou no while da manager");
+    
     pthread_mutex_lock(&mutexBuffer);
-    sem_wait(&semFull);
-
-
-
+    while (count == 0) pthread_cond_wait(&podeCons,&mutexBuffer);
     memcpy(&sessionMessage, &buf[count], sizeof(sessionProtoMessage));
 
-
+    consptr++; if (consptr == MAX_BUFFER_SIZE) consptr = 0;
     count--;
+    pthread_cond_signal(&podeProd);
     pthread_mutex_unlock(&mutexBuffer);
-    sem_post(&semEmpty);
+
+
+    printf("este e o resp pipe que vai abrir: %s", sessionMessage.resp_pipe_path);
+
+    // memcpy(&sessionMessage, &buf[count], sizeof(sessionProtoMessage));
+  printf("req PIPE PATH DO PROD CONS: %s\n", buf[count].req_pipe_path);
+
+
+    // count--;
+    // pthread_mutex_unlock(&mutexBuffer);
+    // sem_post(&semEmpty);
 
     memset(req_pipe_path,0,MAX_BUFFER_SIZE+1);
     memset(resp_pipe_path,0,MAX_BUFFER_SIZE+1);
@@ -180,11 +219,15 @@ void *manager_thread(){
     strncpy(resp_pipe_path,sessionMessage.resp_pipe_path,MAX_BUFFER_SIZE);
     strncpy(notif_pipe_path,sessionMessage.notif_pipe_path,MAX_BUFFER_SIZE);
 
-    if ((f_resp = open (resp_pipe_path, O_WRONLY)) < 0) exit(1);
+
+    printf("este e o resp pipe que vai abrir: %s", sessionMessage.resp_pipe_path);
+
+    // if ((f_resp = open (resp_pipe_path, O_WRONLY)) < 0) exit(1);
+      if ((f_resp = open (buf[count].resp_pipe_path, O_WRONLY)) < 0) exit(1);
     puts("abriu resp pipe");
     const char *message = "11"; 
     // ssize_t n = write_all(f_resp, message, strlen(message)); // Write the string to the pipe
-    write_all(f_resp, message, strlen(message)); // Write the string to the pipe
+    write_all(f_resp, message, sizeof(message)); // Write the string to the pipe
 
     
     puts("fez write ");
@@ -193,8 +236,9 @@ void *manager_thread(){
     //   exit(1);
     // }
 
-    if ((f_req = open (req_pipe_path, O_RDONLY)) < 0) exit(1);
-
+    // if ((f_req = open (req_pipe_path, O_RDONLY)) < 0) exit(1);
+    if ((f_req = open (sessionMessage.req_pipe_path, O_RDONLY)) < 0) exit(1);
+    
     // if ((f_notif = open (notif_pipe_path, O_WRONLY)) < 0) exit(1);
 
     char result;
@@ -533,6 +577,9 @@ int main(int argc, char **argv) {
     write_str(STDERR_FILENO, "<nome_do_FIFO_de_registo");
     return 1;
   }
+
+  signal(SIGPIPE, SIG_IGN);
+
 
   jobs_directory = argv[1];
 
