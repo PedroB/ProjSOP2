@@ -1,6 +1,7 @@
 WRITE [(a,anna)(b,bernardo)]
-WRITE [(d,dinis)(c,carlota)]
 WRITE [(a,ANNA)]
+DELETE [(a,ANNA)]
+WRITE [(d,dinis)(c,carlota)]
 READ [x,z,l,v]
 SHOW
 BACKUP

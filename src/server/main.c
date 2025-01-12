@@ -139,7 +139,6 @@ void *main_Thread() {
       pthread_mutex_unlock(&mutexBuffer);
 
 
-      puts("MEMCOPY MADE");
 
       // count++;
         // pthread_mutex_unlock(&mutexBuffer); // Sai da seção crítica
@@ -217,7 +216,6 @@ void *manager_thread(){
 
     // if ((f_resp = open (resp_pipe_path, O_WRONLY)) < 0) exit(1);
       if ((f_resp = open (sessionMessage.resp_pipe_path, O_WRONLY)) < 0) exit(1);
-    puts("abriu resp pipe");
     // const char *message = "11"; 
     const char message[2] = {'1', '1'};
     // ssize_t n = write_all(f_resp, message, strlen(message)); // Write the string to the pipe
@@ -234,16 +232,12 @@ void *manager_thread(){
     
     // if ((f_notif = open (notif_pipe_path, O_WRONLY)) < 0) exit(1);
      if ((f_notif = open(sessionMessage.notif_pipe_path, O_WRONLY)) < 0) exit(1);
-
-    // f_notif = 8;
-  printf("PRIMEIRO PRINT f NOtif: %d", f_notif);
-
     
     char result;
     int atending_client = 1;
   while (atending_client) {
     
-    puts("MANAGER ENTROU NO WHILE, ESTA A ATENDER");
+    // puts("MANAGER ENTROU NO WHILE, ESTA A ATENDER");
     switch (get_next2(f_req)) {
       
         case CMD_DISCONNECT:
@@ -260,7 +254,7 @@ void *manager_thread(){
             break;
 
         case CMD_SUBSCRIBE:
-            puts("comando server subscribe");
+            puts("\ncomando server subscribe\n");
             // Lê a chave associada ao comando do pipe
             memset(key, 0, MAX_STRING_SIZE); 
             if (read(f_req, key, MAX_STRING_SIZE) <= 0) {
@@ -280,7 +274,6 @@ void *manager_thread(){
                     write(f_resp, msg, sizeof(msg));                    
 
                 } else {
-                  puts("devia escrever SUCESSO : 1");
                     result = '1'; // Sucesso
                     // const char msg[2] = {  OP_CODE_SUBSCRIBE, result};
                     // puts("antes do write");
@@ -294,7 +287,6 @@ void *manager_thread(){
                     //  const char message[2] = {'1', '1'};
                     //   write(f_resp, message, 2);
                     write(f_resp, msg, sizeof(msg));
-                    puts("depois do   ULTIMO WRITE");
 
                 }
             }
@@ -303,19 +295,28 @@ void *manager_thread(){
             break;
 
         case CMD_UNSUBSCRIBE:
-                        puts("comando server UNsubscribe");
+                        puts("\ncomando server UNsubscribe");
 
             // Lê a chave associada ao comando do pipe
             memset(key, 0, MAX_STRING_SIZE); // Limpa o buffer da chave
             if (read(f_req, key, MAX_STRING_SIZE) <= 0) {
                 result = 1; // Erro ao ler a chave
             } else {
+              puts("VAI AGORA CHAMAR UNSUBSCRIBE");
                 if (kvs_subs_or_unsubs(key, f_notif, OP_CODE_UNSUBSCRIBE) != 0) {
-                    result = '0'; // Erro ao cancelar subscrição
-                    write_to_resp_pipe(f_resp, OP_CODE_UNSUBSCRIBE, result);
+                    result = '0';
+                    char msg[2];
+                    memset(msg, '3', 1);
+                    memset(msg+1, '0', 1);
+            
+                    write(f_resp, msg, sizeof(msg));        
                 } else {
-                    result = '1'; // Sucesso
-                    write_to_resp_pipe(f_resp, OP_CODE_UNSUBSCRIBE, result);
+                    result = '1'; 
+                    char msg[2];
+                    memset(msg, '3', 1);
+                    memset(msg+1, '1', 1);
+                                    
+                    write(f_resp, msg, sizeof(msg));
                 }
             }
             break;
@@ -340,6 +341,7 @@ static int run_job(int in_fd, int out_fd, char *filename) {
 
     switch (get_next(in_fd)) {
     case CMD_WRITE:
+    puts("              COMEÇOU WRITE da key");
       num_pairs =
           parse_write(in_fd, keys, values, MAX_WRITE_SIZE, MAX_STRING_SIZE);
       if (num_pairs == 0) {
@@ -350,6 +352,10 @@ static int run_job(int in_fd, int out_fd, char *filename) {
       if (kvs_write(num_pairs, keys, values)) {
         write_str(STDERR_FILENO, "Failed to write pair\n");
       }
+          puts("      ACABOU WRITE da key, espera 30 segundos");
+
+      sleep(30);
+      
       break;
 
     case CMD_READ:
@@ -378,6 +384,7 @@ static int run_job(int in_fd, int out_fd, char *filename) {
       if (kvs_delete(num_pairs, keys, out_fd)) {
         write_str(STDERR_FILENO, "Failed to delete pair\n");
       }
+      
       break;
 
     case CMD_SHOW:
@@ -585,7 +592,7 @@ static void dispatch_threads(DIR *dir, char *reg_pipe_path) {
 
   free(threads);
   free(manager_threads);
-  puts("ACABOU DISPATCH");
+
 }
 
 int main(int argc, char **argv) {

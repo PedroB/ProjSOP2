@@ -29,7 +29,7 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
   unlink(resp_pipe_path);
   unlink(notif_pipe_path);
 
-  puts("entrou connect");
+  // puts("entrou connect");
   if (mkfifo(req_pipe_path, 0777) < 0) exit(1);
   if (mkfifo(resp_pipe_path, 0777) < 0) exit(1);
   if (mkfifo(notif_pipe_path,0777) < 0) exit(1);
@@ -60,7 +60,7 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
   // if (n != sizeof(sessionProtoMessage)) {
   //   exit(1);
   // }
-  puts("acabou connect");
+  // puts("acabou connect");
 
   return 0;
 }
@@ -160,9 +160,7 @@ int kvs_subscribe_unsubscribe(const char *key, char mode) {
 
     // subRqst subRQST;
 
-    puts("entrou subs!!!!!");
-
-    printf("Key: %s, Mode: %c\n", key, mode);
+    // printf("Key: %s, Mode: %c\n", key, mode);
 
     sessionMessage.opcode = mode;
     // subRQST.opcode = mode;
@@ -188,7 +186,7 @@ int kvs_subscribe_unsubscribe(const char *key, char mode) {
     size_t msg_len = (size_t)snprintf_len;  // Explicit conversion to size_t
 
     // Debug: Show the message content before sending it
-    printf("Prepared message: %s (length: %zu)\n", msg, msg_len);
+    // printf("Prepared message: %s (length: %zu)\n", msg, msg_len);
 
     // Write the message to the request pipe
     // ssize_t n = write_all(f_req, msg, msg_len);
@@ -225,8 +223,6 @@ void *read_Thread() {
     notifMessage notification;
   // read from notif pipe
   if ((f_notif = open(sessionMessage.notif_pipe_path, O_RDONLY)) < 0) exit(1);
-  puts("abriu f_notif do cliente");
-
   // char response[MAX_STRING_SIZE]; // Adjust size based on expected response length
   // ssize_t resp_len = read_all(f_resp, response, sizeof(response) - 1, NULL); // Leave space for null terminator
   // if (resp_len < 0) {
@@ -236,7 +232,7 @@ void *read_Thread() {
   // response[resp_len] = '\0';
 
   read_all(f_notif, &notification, sizeof(notifMessage), NULL); // Leave space for null terminator
-
+        // printf("o cliente leu isto: key->  %s value-> %s", notification.key, notification.value);
 
   printf("(%s,%s)\n", notification.key, notification.value);
 
