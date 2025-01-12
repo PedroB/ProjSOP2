@@ -247,6 +247,7 @@ int add_notif_pipe(NotifPipeNode **head_node, int notif_pipe) {
         free(new_node);
         return 1;
     }
+    printf("new node fd: %d\n", new_node->notif_pipe );
 
     // Inserir o novo nó no início da lista
     new_node->next = *head_node;
@@ -259,9 +260,9 @@ int add_notif_pipe(NotifPipeNode **head_node, int notif_pipe) {
 
 ///////////////////////////////////////////////////////////////////////////////
 int remove_notif_pipe(NotifPipeNode **head_node, int notif_pipe) {
-    if (!head_node || !notif_pipe) {
-        return 1; 
-    }
+    // if (!head_node || !notif_pipe) {
+    //     return 1; 
+    // }
 
     NotifPipeNode *current = *head_node;
     NotifPipeNode *previous = NULL;
@@ -278,6 +279,7 @@ int remove_notif_pipe(NotifPipeNode **head_node, int notif_pipe) {
 
             // Liberar memória do nó removido
             free(current); // Apenas o nó é liberado
+            puts("acabou REMOVE");
             return 0; // Sucesso
         }
 
@@ -285,7 +287,7 @@ int remove_notif_pipe(NotifPipeNode **head_node, int notif_pipe) {
         previous = current;
         current = current->next;
     }
-
+  
     return 1; // Pipe não encontrado
 }
 
@@ -305,7 +307,7 @@ int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe) {
             return 1;
         }
 
-  puts("entrou execute_subs");
+  
     int index = hash(key); // Calcular o índice na tabela hash
     KeyNode *keyNode = ht->table[index];
 
@@ -318,13 +320,18 @@ int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe) {
                puts("correu mal o add_notif, nao subscreveu");
                 return 1;
             }
+        //       printf("ACTUALLY ESCREVEU chave %s new node fd: %d\n",keyNode->key,
+        //        keyNode->notif_pipes_head->notif_pipe );
 
+        // keyNode->notif_pipes_head = keyNode->notif_pipes_head->next ; // Avançar para o próximo KeyNode
+
+        //          printf("NEXT node fd: %d\n",
+        //        keyNode->notif_pipes_head->notif_pipe );
             return 0;
         }
 
         keyNode = keyNode->next; // Avançar para o próximo KeyNode
     }
-    
     return 1;
 }
 
@@ -349,6 +356,10 @@ int execute_unsubscribe(HashTable *ht, const char *key, const int notif_pipe) {
                 return 1;
             }
 
+            printf("fez unsubs? a lista tem de mostrar so o ii ou i: chave %s new node fd: %d\n",keyNode->key,
+               keyNode->notif_pipes_head->notif_pipe );
+
+               
             return 0;
         }
 

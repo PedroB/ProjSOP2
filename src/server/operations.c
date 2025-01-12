@@ -187,7 +187,7 @@ void kvs_wait(unsigned int delay_ms) {
 ///////////////////////////////////////////////////////////////////////////////////
 int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_notif, char mode) {
 
-    puts("ENTROU NO SUBSCRIBE");
+  
    if (kvs_table == NULL) {
     fprintf(stderr, "KVS state must be initialized\n");
     return 1;
@@ -206,10 +206,8 @@ int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_notif, char mode) 
       }
     }
   } 
-  puts("antes do lock");
 
   pthread_rwlock_unlock(&kvs_table->tablelock);
-  puts("depois do lock");
   return 0;
 }
 
