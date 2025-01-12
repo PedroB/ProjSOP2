@@ -189,7 +189,7 @@ void *manager_thread(){
   sessionProtoMessage sessionMessage;
   char req_pipe_path[MAX_BUFFER_SIZE+1], resp_pipe_path[MAX_BUFFER_SIZE+1], notif_pipe_path[MAX_BUFFER_SIZE+1];
   int f_req, f_resp;
-  int f_notif = 0;
+  int f_notif;
   
   char key[MAX_STRING_SIZE];
 
@@ -211,7 +211,7 @@ void *manager_thread(){
     pthread_mutex_unlock(&mutexBuffer);
 
 
-    printf("este e o resp pipe que vai abrir: %s", sessionMessage.resp_pipe_path);
+    printf("este e o resp pipe que vai abrir: %s\n", sessionMessage.resp_pipe_path);
 
     // memcpy(&sessionMessage, &buf[count], sizeof(sessionProtoMessage));
   printf("req PIPE PATH DO PROD CONS: %s\n", buf[count].req_pipe_path);
@@ -229,7 +229,7 @@ void *manager_thread(){
     strncpy(notif_pipe_path,sessionMessage.notif_pipe_path,MAX_BUFFER_SIZE);
 
 
-    printf("este e o resp pipe que vai abrir: %s", sessionMessage.resp_pipe_path);
+    printf("este e o resp pipe que vai abrir: %s\n", sessionMessage.resp_pipe_path);
 
     // if ((f_resp = open (resp_pipe_path, O_WRONLY)) < 0) exit(1);
       if ((f_resp = open (sessionMessage.resp_pipe_path, O_WRONLY)) < 0) exit(1);
@@ -249,6 +249,8 @@ void *manager_thread(){
     if ((f_req = open (sessionMessage.req_pipe_path, O_RDONLY)) < 0) exit(1);
     
     // if ((f_notif = open (notif_pipe_path, O_WRONLY)) < 0) exit(1);
+     if ((f_notif = open(sessionMessage.notif_pipe_path, O_WRONLY)) < 0) exit(1);
+
 
     char result;
     int atending_client = 1;
@@ -277,28 +279,45 @@ void *manager_thread(){
                 result = '1'; // Erro ao ler a chave
             } else {
                 printf("key is: %s\n", key);
+                printf("dasdsa%d",f_notif);
                 if (kvs_subs_or_unsubs(key, f_notif, OP_CODE_SUBSCRIBE) != 0) {
                     result = '0'; // Erro ao subscrever
                     puts("kvs subs retornou 1");
                     // const char msg[2] = { OP_CODE_SUBSCRIBE, result};
-                    char msg[2] = { '3', '0'};
-                  
+                    // char msg[2] = { '3', '0'};
+                    char msg[2];
+                    memset(msg, '3', 1);
+                    memset(msg+1, '0', 1);
+                                      
                     //  const char message[2] = {'1', '1'};
                     //   write(f_resp, message, 2);
 
 
-                    write(f_resp, key, sizeof(key));
+                    // write(f_resp, key, sizeof(key));
+                    write(f_resp, msg, sizeof(msg));
+
                   puts("a seguir do write");
                     
                     // write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
                     atending_client = 0;
                 } else {
                     result = '1'; // Sucesso
-                    const char msg[2] = {  OP_CODE_SUBSCRIBE, result};
-                    puts("antes do write");
-                    write(f_resp, msg, 2);
-                    // write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
-                    puts("depois do write");
+                    // const char msg[2] = {  OP_CODE_SUBSCRIBE, result};
+                    // puts("antes do write");
+                    // write(f_resp, msg, 2);
+                    // // write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
+                    // puts("depois do write");
+                       char msg[2];
+                    memset(msg, '3', 1);
+                    memset(msg+1, '0', 1);
+                                      
+                    //  const char message[2] = {'1', '1'};
+                    //   write(f_resp, message, 2);
+
+
+                    // write(f_resp, key, sizeof(key));
+                    write(f_resp, msg, sizeof(msg));
+
 
                     atending_client = 0;
                 }

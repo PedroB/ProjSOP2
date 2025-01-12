@@ -230,19 +230,20 @@ void free_table(HashTable *ht) {
 int add_notif_pipe(NotifPipeNode **head_node, int notif_pipe) {
        puts("começou add_notif");
 
-    if (!head_node || !notif_pipe) {
-        return 1; // Erro: Entrada inválida
-    }
+    // if (!head_node || !notif_pipe) {
+    //     return 1; // Erro: Entrada inválida
+    // }
 
     // Criar um novo nó
     NotifPipeNode *new_node = malloc(sizeof(NotifPipeNode));
-    if (!new_node) {
-        return -1;
-    }
+    // if (!new_node) {
+    //     return -1;
+    // }
 
     // Alocar e copiar a string do pipe de notificação
     new_node->notif_pipe = notif_pipe;
     if (!new_node->notif_pipe) {
+      puts("NAO PASSOU VERIF NO ADD NOTIF");
         free(new_node);
         return 1;
     }
@@ -296,6 +297,14 @@ int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe) {
     //     fprintf(stderr, "Erro: Parâmetros inválidos.\n");
     //     return 1;
     // }
+
+
+    if (!key) {
+            fprintf(stderr, "Erro: Parâmetros inválidos.\n");
+            puts("not keyyyyy");
+            return 1;
+        }
+
   puts("entrou execute_subs");
     int index = hash(key); // Calcular o índice na tabela hash
     KeyNode *keyNode = ht->table[index];
@@ -303,9 +312,7 @@ int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe) {
     // Buscar pela chave no hash table
     while (keyNode != NULL) {
         if (strcmp(keyNode->key, key) == 0) {
-            // Encontrou a chave, verifica se o pipe já está registrado
-            
-
+            puts("ENCONTROU CHAVE");
             // Adicionar o pipe à lista de notificação
             if (add_notif_pipe(&keyNode->notif_pipes_head, notif_pipe) != 0) {
                puts("correu mal o add_notif, nao subscreveu");
@@ -317,7 +324,7 @@ int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe) {
 
         keyNode = keyNode->next; // Avançar para o próximo KeyNode
     }
-
+    
     return 1;
 }
 

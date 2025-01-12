@@ -19,7 +19,6 @@ int main(int argc, char *argv[]) {
             argv[0]);
     return 1;
   }
-printf("entrou na main do client");
   char req_pipe_path[256] = "/tmp/req";
   char resp_pipe_path[256] = "/tmp/resp";
   char notif_pipe_path[256] = "/tmp/notif";
@@ -38,7 +37,6 @@ printf("entrou na main do client");
     fprintf(stderr, "Failed to connect to KVS\n");
     return 1;
   } 
-printf("chegou a este if");
 
   //dispatch the thread that reads from the response pipe and prints to stdout
   if (pthread_create(&read_thread, NULL, read_Thread, NULL) != 0) {
@@ -48,7 +46,7 @@ printf("chegou a este if");
 
 
  while (1) {
-    printf("entrou o while do client");
+    printf("entrou o while do client\n");
 
     char key[MAX_STRING_SIZE]; // Buffer para armazenar a chave lida
     switch (get_next(STDIN_FILENO)) {

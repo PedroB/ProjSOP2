@@ -44,7 +44,7 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
   strncpy(sessionMessage.resp_pipe_path, resp_pipe_path, MAX_PIPE_PATH_LENGTH);
   strncpy(sessionMessage.notif_pipe_path, notif_pipe_path, MAX_PIPE_PATH_LENGTH);
 
-  printf("preencheu sessionMessage: %s", sessionMessage.req_pipe_path);
+  printf("preencheu sessionMessage: %s\n", sessionMessage.req_pipe_path);
 
   // ssize_t n = write_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
   // write_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
@@ -81,8 +81,8 @@ void read_response() {
 
   // }
   // response[2] = '\0';
-
-	printf("Server returned %c for operation: %c", response[1], response[0]);
+  
+	printf("Server returned %c for operation: %c\n", response[1], response[0]);
 }
 
 int kvs_disconnect(void) {
@@ -234,7 +234,7 @@ void *read_Thread() {
   }
   response[resp_len] = '\0';
 
-  printf("%s", response);
+  printf("%s\n", response);
 
   return NULL;
 }

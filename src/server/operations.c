@@ -206,8 +206,10 @@ int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_notif, char mode) 
       }
     }
   } 
+  puts("antes do lock");
 
   pthread_rwlock_unlock(&kvs_table->tablelock);
+  puts("depois do lock");
   return 0;
 }
 
