@@ -81,7 +81,7 @@ void read_response() {
 
   // }
   // response[2] = '\0';
-  
+
 	printf("Server returned %c for operation: %c\n", response[1], response[0]);
 }
 
@@ -222,19 +222,23 @@ int kvs_subscribe_unsubscribe(const char *key, char mode) {
 // read from notif pipe and print to stdout
 void *read_Thread() {
 
-
+    notifMessage notification;
   // read from notif pipe
   if ((f_notif = open(sessionMessage.notif_pipe_path, O_RDONLY)) < 0) exit(1);
+  puts("abriu f_notif do cliente");
 
-  char response[MAX_STRING_SIZE]; // Adjust size based on expected response length
-  ssize_t resp_len = read_all(f_resp, response, sizeof(response) - 1, NULL); // Leave space for null terminator
-  if (resp_len < 0) {
-      perror("Error reading from response pipe");
-      close(f_resp);
-  }
-  response[resp_len] = '\0';
+  // char response[MAX_STRING_SIZE]; // Adjust size based on expected response length
+  // ssize_t resp_len = read_all(f_resp, response, sizeof(response) - 1, NULL); // Leave space for null terminator
+  // if (resp_len < 0) {
+  //     perror("Error reading from response pipe");
+  //     close(f_resp);
+  // }
+  // response[resp_len] = '\0';
 
-  printf("%s\n", response);
+  read_all(f_notif, &notification, sizeof(notifMessage), NULL); // Leave space for null terminator
+
+
+  printf("(%s,%s)\n", notification.key, notification.value);
 
   return NULL;
 }

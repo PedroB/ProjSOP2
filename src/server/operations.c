@@ -192,7 +192,7 @@ int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_notif, char mode) 
     fprintf(stderr, "KVS state must be initialized\n");
     return 1;
   }
-
+  printf("SEGUNDO PRINT f NOtif: %d", f_notif);
   pthread_rwlock_wrlock(&kvs_table->tablelock);
 
   if(mode == OP_CODE_SUBSCRIBE) {
@@ -206,8 +206,9 @@ int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_notif, char mode) 
       }
     }
   } 
-
+  puts("ANTES DO LOCK");
   pthread_rwlock_unlock(&kvs_table->tablelock);
+  puts("kvs subs retornou 0");
   return 0;
 }
 

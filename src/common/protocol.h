@@ -35,4 +35,15 @@ typedef struct {
     char key[MAX_STRING_SIZE];
 } subRqst;
 
+
+
+
+typedef struct {
+    char key[MAX_STRING_SIZE];
+    char value[MAX_STRING_SIZE];
+
+
+} notifMessage;
+
+
 #endif // COMMON_PROTOCOL_H

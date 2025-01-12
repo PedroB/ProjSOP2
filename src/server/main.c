@@ -233,9 +233,12 @@ void *manager_thread(){
     if ((f_req = open (sessionMessage.req_pipe_path, O_RDONLY)) < 0) exit(1);
     
     // if ((f_notif = open (notif_pipe_path, O_WRONLY)) < 0) exit(1);
-    //  if ((f_notif = open(sessionMessage.notif_pipe_path, O_WRONLY)) < 0) exit(1);
+     if ((f_notif = open(sessionMessage.notif_pipe_path, O_WRONLY)) < 0) exit(1);
 
-    f_notif = 8;
+    // f_notif = 8;
+  printf("PRIMEIRO PRINT f NOtif: %d", f_notif);
+
+    
     char result;
     int atending_client = 1;
   while (atending_client) {
@@ -277,6 +280,7 @@ void *manager_thread(){
                     write(f_resp, msg, sizeof(msg));                    
 
                 } else {
+                  puts("devia escrever SUCESSO : 1");
                     result = '1'; // Sucesso
                     // const char msg[2] = {  OP_CODE_SUBSCRIBE, result};
                     // puts("antes do write");
@@ -290,6 +294,7 @@ void *manager_thread(){
                     //  const char message[2] = {'1', '1'};
                     //   write(f_resp, message, 2);
                     write(f_resp, msg, sizeof(msg));
+                    puts("depois do   ULTIMO WRITE");
 
                 }
             }

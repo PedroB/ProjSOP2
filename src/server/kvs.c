@@ -9,6 +9,8 @@
 
 #include "string.h"
 #include <sys/fcntl.h>
+#include <src/common/protocol.h>
+
 
 extern char buf[MAX_BUFFER_SIZE]; // Reference to global variable from main.c
 extern 
@@ -41,16 +43,21 @@ struct HashTable *create_hash_table() {
 
 
 ///////////////////////////////////////////////////////////////////////////////////
-int write_to_notif_pipe(int f_pipe, int is_deleted, const char *key, const char *value) {
+int write_to_notif_pipe(int f_notif, int is_deleted, const char *key, const char *value) {
     
-    char msg[MAX_STRING_SIZE];
-    int msg_len = -1; // Inicialização para evitar avisos
+    notifMessage notification;
+    // char msg[MAX_STRING_SIZE];
+    // int msg_len = -1; // Inicialização para evitar avisos
+              
+    strcpy(notification.key, key);
 
     if (is_deleted == DELETED) {
-        msg_len = snprintf(msg, sizeof(msg), "(%s, DELETED)", key);
+        strcpy(notification.value, "DELETED");
     } else {
-        msg_len = snprintf(msg, sizeof(msg), "(%s, %s)", key, value);
+        strcpy(notification.value, value);
     }
+
+      write_all(f_notif, (void *)&notification, sizeof(notifMessage));
 
     // Check if snprintf succeeded
     // if (msg_len < 0 || (size_t)msg_len >= sizeof(msg)) {
@@ -60,7 +67,7 @@ int write_to_notif_pipe(int f_pipe, int is_deleted, const char *key, const char 
     // }
 
     // ssize_t n = write_all(f_pipe, msg, 83); // Conversão explícita
-    write_all(f_pipe, msg, 83); // Conversão explícita
+    // write(f_pipe, msg, 83); // Conversão explícita
 
     // if (n != msg_len) {
     //     fprintf(stderr, "Failed to write to pipe\n");
@@ -68,7 +75,7 @@ int write_to_notif_pipe(int f_pipe, int is_deleted, const char *key, const char 
     //     exit(1);
     // }
 
-    close(f_pipe);
+    // close(f_pipe);
 
     return 0;
 }
@@ -225,8 +232,6 @@ void free_table(HashTable *ht) {
 //     return NULL; // Retorna NULL se não encontrar o pipe
 // }
 
-
-
 int add_notif_pipe(NotifPipeNode **head_node, int notif_pipe) {
        puts("começou add_notif");
 
@@ -256,7 +261,6 @@ int add_notif_pipe(NotifPipeNode **head_node, int notif_pipe) {
 
     return 0;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 int remove_notif_pipe(NotifPipeNode **head_node, int notif_pipe) {
@@ -288,10 +292,8 @@ int remove_notif_pipe(NotifPipeNode **head_node, int notif_pipe) {
         current = current->next;
     }
   
-    return 1; // Pipe não encontrado
+    return 1; 
 }
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe) {
@@ -300,14 +302,12 @@ int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe) {
     //     return 1;
     // }
 
-
     if (!key) {
             fprintf(stderr, "Erro: Parâmetros inválidos.\n");
             puts("not keyyyyy");
             return 1;
         }
 
-  
     int index = hash(key); // Calcular o índice na tabela hash
     KeyNode *keyNode = ht->table[index];
 
@@ -334,8 +334,6 @@ int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe) {
     }
     return 1;
 }
-
-
 ///////////////////////////////////////////////////////////////////////////////
 int execute_unsubscribe(HashTable *ht, const char *key, const int notif_pipe) {
     if (!key || !notif_pipe || !ht) {
