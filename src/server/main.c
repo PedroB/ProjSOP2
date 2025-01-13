@@ -227,30 +227,33 @@ void *manager_thread(){
     //   exit(1);
     // }
 
-    // if ((f_req = open (req_pipe_path, O_RDONLY)) < 0) exit(1);
     if ((f_req = open (sessionMessage.req_pipe_path, O_RDONLY)) < 0) exit(1);
     
-    // if ((f_notif = open (notif_pipe_path, O_WRONLY)) < 0) exit(1);
      if ((f_notif = open(sessionMessage.notif_pipe_path, O_WRONLY)) < 0) exit(1);
     
     char result;
     int atending_client = 1;
   while (atending_client) {
     
-    // puts("MANAGER ENTROU NO WHILE, ESTA A ATENDER");
     switch (get_next2(f_req)) {
       
         case CMD_DISCONNECT:
-            if (kvs_disconnect(notif_pipe_path) != 0) {
+            if (kvs_disconnect(f_notif) != 0) {
                 result = '0';
-                write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
-            atending_client = 0; // Finaliza o atendimento do cliente
             } else {
                 result = '1';
-                write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
-            atending_client = 0; // Finaliza o atendimento do cliente
             }
+            write_to_resp_pipe(f_resp, OP_CODE_DISCONNECT, result);
             
+            close(f_req);
+            close(f_resp);
+            close(f_notif);
+            unlink(sessionMessage.req_pipe_path);
+            unlink(sessionMessage.resp_pipe_path);
+            unlink(sessionMessage.notif_pipe_path);
+
+            atending_client = 0; 
+
             break;
 
         case CMD_SUBSCRIBE:
@@ -260,45 +263,23 @@ void *manager_thread(){
             if (read(f_req, key, MAX_STRING_SIZE) <= 0) {
                 result = '1'; 
             } else {
-                printf("key is: %s\n", key);
+                char msg[2];
+
                 if (kvs_subs_or_unsubs(key, f_notif, OP_CODE_SUBSCRIBE) != 0) {
                     result = '0'; 
-                    // const char msg[2] = { OP_CODE_SUBSCRIBE, result};
-                    char msg[2];
-                    memset(msg, '3', 1);
-                    memset(msg+1, '0', 1);
-                                      
-                    //  const char message[2] = {'1', '1'};
-                    //   write(f_resp, message, 2);
-                    // write(f_resp, key, sizeof(key));
-                    write(f_resp, msg, sizeof(msg));                    
-
+                    memset(msg, OP_CODE_SUBSCRIBE, 1);
+                                  
                 } else {
-                    result = '1'; // Sucesso
-                    // const char msg[2] = {  OP_CODE_SUBSCRIBE, result};
-                    // puts("antes do write");
-                    // write(f_resp, msg, 2);
-                    // // write_to_resp_pipe(f_resp, OP_CODE_SUBSCRIBE, result);
-                    // puts("depois do write");
-                       char msg[2];
-                    memset(msg, '3', 1);
-                    memset(msg+1, '1', 1);
-                                      
-                    //  const char message[2] = {'1', '1'};
-                    //   write(f_resp, message, 2);
-                    write(f_resp, msg, sizeof(msg));
-
+                    result = '1'; 
+                    memset(msg, OP_CODE_SUBSCRIBE, 1);
                 }
+                memset(msg+1, result, 1);
+                write(f_resp, msg, sizeof(msg));
             }
-            
-            
             break;
 
         case CMD_UNSUBSCRIBE:
-                        puts("\ncomando server UNsubscribe");
-
-            // Lê a chave associada ao comando do pipe
-            memset(key, 0, MAX_STRING_SIZE); // Limpa o buffer da chave
+            memset(key, 0, MAX_STRING_SIZE); 
             if (read(f_req, key, MAX_STRING_SIZE) <= 0) {
                 result = 1; // Erro ao ler a chave
             } else {
@@ -306,14 +287,14 @@ void *manager_thread(){
                 if (kvs_subs_or_unsubs(key, f_notif, OP_CODE_UNSUBSCRIBE) != 0) {
                     result = '0';
                     char msg[2];
-                    memset(msg, '3', 1);
+                    memset(msg, OP_CODE_UNSUBSCRIBE, 1);
                     memset(msg+1, '0', 1);
             
                     write(f_resp, msg, sizeof(msg));        
                 } else {
                     result = '1'; 
                     char msg[2];
-                    memset(msg, '3', 1);
+                    memset(msg, OP_CODE_UNSUBSCRIBE, 1);
                     memset(msg+1, '1', 1);
                                     
                     write(f_resp, msg, sizeof(msg));
@@ -322,13 +303,11 @@ void *manager_thread(){
             break;
 
         default:
-            
             atending_client = 0; // Finaliza o atendimento do cliente
             break;
     }
-}
-
-}
+   }
+  }
 }
 
 static int run_job(int in_fd, int out_fd, char *filename) {
@@ -341,7 +320,6 @@ static int run_job(int in_fd, int out_fd, char *filename) {
 
     switch (get_next(in_fd)) {
     case CMD_WRITE:
-    puts("              COMEÇOU WRITE da key");
       num_pairs =
           parse_write(in_fd, keys, values, MAX_WRITE_SIZE, MAX_STRING_SIZE);
       if (num_pairs == 0) {
@@ -352,10 +330,8 @@ static int run_job(int in_fd, int out_fd, char *filename) {
       if (kvs_write(num_pairs, keys, values)) {
         write_str(STDERR_FILENO, "Failed to write pair\n");
       }
-          puts("      ACABOU WRITE da key, espera 30 segundos");
-
       sleep(30);
-      
+    
       break;
 
     case CMD_READ:

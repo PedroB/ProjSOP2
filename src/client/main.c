@@ -46,7 +46,6 @@ int main(int argc, char *argv[]) {
 
 
  while (1) {
-    printf("entrou o while do client\n");
 
     char key[MAX_STRING_SIZE]; // Buffer para armazenar a chave lida
     switch (get_next(STDIN_FILENO)) {

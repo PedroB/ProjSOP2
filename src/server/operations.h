@@ -64,6 +64,6 @@ int get_n_current_backups();
 
 int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_notif, char mode);
 
-int kvs_disconnect(const char *notif_pipe);
+int kvs_disconnect(int f_notif);
 
 #endif // KVS_OPERATIONS_H

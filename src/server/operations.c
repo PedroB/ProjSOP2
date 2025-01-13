@@ -220,16 +220,13 @@ void kvs_wait(unsigned int delay_ms) {
   nanosleep(&delay, NULL);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////////
 int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_notif, char mode) {
 
-  puts("entrou kvs_subs_unsubs");
    if (kvs_table == NULL) {
     fprintf(stderr, "KVS state must be initialized\n");
     return 1;
   }
-
   pthread_rwlock_wrlock(&kvs_table->tablelock);
 
   if(mode == OP_CODE_SUBSCRIBE) {
@@ -237,24 +234,18 @@ int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_notif, char mode) 
       return 1;
     }
   } else if (mode == OP_CODE_UNSUBSCRIBE) {
-    puts("OP CODE UNUSUBSSSSSSS");
       if (execute_unsubscribe(kvs_table, key, f_notif) != 0) {
         return 1;
       }
-
     }
-          print_linked_nodes();
+    print_linked_nodes();
 
   pthread_rwlock_unlock(&kvs_table->tablelock);
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////////
-int kvs_disconnect(const char *notif_pipe_path) {
-
-  int f_notif = 0;
-  if ((f_notif = open (notif_pipe_path, O_WRONLY)) < 0) exit(1);
+int kvs_disconnect(int f_notif) {
 
   if (kvs_table == NULL) {
     fprintf(stderr, "KVS state must be initialized\n");
@@ -267,9 +258,8 @@ int kvs_disconnect(const char *notif_pipe_path) {
   if (execute_disconnect(kvs_table,f_notif) != 0) {
     return 1;
   }
+    print_linked_nodes();
 
   pthread_rwlock_unlock(&kvs_table->tablelock);
-
-  close(f_notif);
   return 0;
 }

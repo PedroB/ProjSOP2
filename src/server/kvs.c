@@ -454,22 +454,17 @@ int execute_subscribe(HashTable *ht, const char *key, const int notif_pipe) {
 }
 ///////////////////////////////////////////////////////////////////////////////
 int execute_unsubscribe(HashTable *ht, const char *key, const int notif_pipe) {
-  puts("entrou unsubs");
     if (!key || !notif_pipe || !ht) {
         fprintf(stderr, "Erro: Parâmetros inválidos.\n");
         return 1;
     }
 
-    int index = hash(key); // Calcular o índice na tabela hash
+    int index = hash(key); 
     KeyNode *keyNode = ht->table[index];
-    puts("execute unsubs ENTROUUUUUUUUUUUU");
     // Percorrer a lista de KeyNode
     while (keyNode != NULL) {
         if (strcmp(keyNode->key, key) == 0) {
             // Encontrou a chave, busca pelos pipes de notificação
-
-            // Remover o pipe de notificação
-            puts("agora vai entrar no remove?");
             if (remove_notif_pipe(&keyNode->notif_pipes_head, notif_pipe) != 0) {
                 return 1;
             }
@@ -477,46 +472,40 @@ int execute_unsubscribe(HashTable *ht, const char *key, const int notif_pipe) {
             return 0;
         }
 
-        keyNode = keyNode->next; // Avançar para o próximo KeyNode na lista
+        keyNode = keyNode->next; 
     }
-
 
     return 1;
 }
 
-
-///////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 int execute_disconnect( HashTable *ht,const int notif_pipe) {
-    if (!notif_pipe || !ht) {
-        return 1;
-    }
+  if (!notif_pipe || !ht) {
+      return 1;
+  }
 
-    // Iterar por todas as entradas na tabela hash
-    for (int i = 0; i < TABLE_SIZE; i++) {
-        KeyNode *keyNode = ht->table[i];
+  // Iterar por todas as entradas na tabela hash
+  for (int i = 0; i < TABLE_SIZE; i++) {
+      KeyNode *keyNode = ht->table[i];
+      // Iterar por cada KeyNode na lista 
+      if(keyNode == NULL) {
+        break;
+      }
+          int result = remove_notif_pipe(&keyNode->notif_pipes_head, notif_pipe);
 
-        // Iterar por cada KeyNode na lista 
-        while (keyNode != NULL) {
-            NotifPipeNode **current = &keyNode->notif_pipes_head;
-
-            // Iterar pela lista de NotifPipeNode
-            while (*current != NULL) {
-                if ((*current)->notif_pipe == notif_pipe) {
-                    // Pipe encontrado, remover o nó
-                    NotifPipeNode *to_remove = *current;
-                    *current = to_remove->next; // Atualizar o ponteiro para pular o nó
-                    
-                    free(to_remove);
-
-                    
-                } else {
-                    current = &((*current)->next); // Avançar para o próximo nó
-                }
-            }
-
+          if (result == 0) {
             keyNode = keyNode->next; // Avançar para o próximo KeyNode na lista
-        }
-    }
+          } else {
+            return 1;
+          }
+      }
+      return 0;
 
-    return 0;
-}
+}               
+
+  
+    
+
+
+
+
