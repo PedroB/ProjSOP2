@@ -23,7 +23,6 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
   unlink(resp_pipe_path);
   unlink(notif_pipe_path);
 
-  
   if (mkfifo(req_pipe_path, 0777) < 0) exit(1);
   if (mkfifo(resp_pipe_path, 0777) < 0) exit(1);
   if (mkfifo(notif_pipe_path,0777) < 0) exit(1);
@@ -38,13 +37,19 @@ int kvs_connect(char const *req_pipe_path, char const *resp_pipe_path,
   strncpy(sessionMessage.resp_pipe_path, resp_pipe_path, MAX_PIPE_PATH_LENGTH);
   strncpy(sessionMessage.notif_pipe_path, notif_pipe_path, MAX_PIPE_PATH_LENGTH);
 
-  write(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
+  ssize_t n = write(f_server, (void *)&sessionMessage, sizeof(sessionMessage));
   
+  if (n != sizeof(sessionMessage)) {
+    exit(1);
+  }
+
    if ((f_resp = open(sessionMessage.resp_pipe_path, O_RDONLY)) < 0) exit(1);
    read_response();
 
 
    if ((f_req = open(sessionMessage.req_pipe_path, O_WRONLY)) < 0) exit(1);
+     if ((f_notif = open(sessionMessage.notif_pipe_path, O_RDONLY)) < 0) exit(1);
+
 
   return 0;
 }
@@ -60,7 +65,11 @@ void read_response() {
 int kvs_disconnect(void) {
  
   char msg = '2';
-    write_all(f_req, &msg, 1);
+  ssize_t n = write_all(f_req, &msg, 1);
+    
+  if (n != sizeof(msg)) {
+    exit(1);
+  }
 
   read_response();
 
@@ -91,32 +100,35 @@ int kvs_subscribe_unsubscribe(const char *key, char mode) {
 
     size_t msg_len = (size_t)snprintf_len;  
 
-    // ssize_t n = write_all(f_req, msg, msg_len);
     write(f_req, msg, msg_len );
 
-  // ssize_t n = read(f_resp,resp , 2);
-  // if (n != (ssize_t) 2) {puts("client nao leu do resp bem");};
    read_response();
     return 0;
 }
-//////////////////////////////////////////////////////////////////////////////////////
-// read from notif pipe and print to stdout
+////////////////////////////////////////////
+// Read from notif pipe and print to stdout only when the notif pipe has changed
 void *read_Thread() {
-
     notifMessage notification;
-  // read from notif pipe
-  if ((f_notif = open(sessionMessage.notif_pipe_path, O_RDONLY)) < 0) exit(1);
-  // ssize_t resp_len = read_all(f_resp, response, sizeof(response) - 1, NULL); // Leave space for null terminator
-  // if (resp_len < 0) {
-  //     perror("Error reading from response pipe");
-  //     close(f_resp);
-  // }
-  // response[resp_len] = '\0';
+    notifMessage last_notification = { .key = "", .value = "" }; // Initialize with empty values
 
-  read_all(f_notif, &notification, sizeof(notifMessage), NULL);
+    while (1) {
+        // Read from the pipe
+        read_all(f_notif, &notification, sizeof(notification), NULL);
 
-  printf("(%s,%s)\n", notification.key, notification.value);
+        // Compare the new notification with the last one
+        if (strcmp(notification.key, last_notification.key) != 0 || 
+            strcmp(notification.value, last_notification.value) != 0) {
+            // New data detected, print it
+            printf("(%s,%s)\n", notification.key, notification.value);
 
-  return NULL;
+            // Update the last_notification
+            last_notification = notification;
+        }
+
+        // Optional: Add a short sleep to reduce CPU usage
+        sleep(10); 
+    }
+
+    return NULL;
 }
 

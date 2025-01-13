@@ -1,6 +1,6 @@
 WRITE [(a,anna)(b,bernardo)]
 WRITE [(a,ANNA)]
-DELETE [(a,ANNA)]
+DELETE [a]
 WRITE [(d,dinis)(c,carlota)]
 READ [x,z,l,v]
 SHOW

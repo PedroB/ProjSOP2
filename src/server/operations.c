@@ -23,41 +23,6 @@ static struct timespec delay_to_timespec(unsigned int delay_ms) {
 }
 
 
-int print_linked_nodes() {
-    if (!kvs_table) {
-        fprintf(stderr, "HashTable is NULL.\n");
-        return 1;
-    }
-    puts("vai printar a linked list de cada KEY:");
-    // Traverse each slot in the hash table
-    for (int i = 0; i < TABLE_SIZE; i++) {
-        KeyNode *keyNode = kvs_table->table[i];
-        // Traverse each KeyNode in the list
-        while (keyNode != NULL) {
-            printf("Key: %s\n", keyNode->key);
-
-            // If there is a notification pipe list, traverse it
-            NotifPipeNode *notifPipeNode = keyNode->notif_pipes_head;
-            if (notifPipeNode != NULL) {
-                printf("  Notification pipes:\n");
-                // Traverse the NotifPipeNode list
-                while (notifPipeNode != NULL) {
-                    printf("    Pipe FD: %d\n", notifPipeNode->notif_pipe);
-                    notifPipeNode = notifPipeNode->next;
-                }
-            } else {
-                printf("  No notification pipes.\n");
-            }
-
-            // Move to the next KeyNode in the list
-            keyNode = keyNode->next;
-        }
-    }
-    return 0;
-}
-
-
-
 int kvs_init() {
   if (kvs_table != NULL) {
     fprintf(stderr, "KVS state has already been initialized\n");
@@ -93,7 +58,6 @@ int kvs_write(size_t num_pairs, char keys[][MAX_STRING_SIZE],
       fprintf(stderr, "Failed to write key pair (%s,%s)\n", keys[i], values[i]);
     }
   }
-  // print_linked_nodes();
   pthread_rwlock_unlock(&kvs_table->tablelock);
   return 0;
 }
@@ -147,7 +111,6 @@ int kvs_delete(size_t num_pairs, char keys[][MAX_STRING_SIZE], int fd) {
   if (aux) {
     write_str(fd, "]\n");
   }
-  // print_linked_nodes();
 
   pthread_rwlock_unlock(&kvs_table->tablelock);
   return 0;
@@ -238,7 +201,6 @@ int kvs_subs_or_unsubs(const char key[MAX_STRING_SIZE], int f_notif, char mode) 
         return 1;
       }
     }
-    print_linked_nodes();
 
   pthread_rwlock_unlock(&kvs_table->tablelock);
   return 0;
@@ -258,7 +220,6 @@ int kvs_disconnect(int f_notif) {
   if (execute_disconnect(kvs_table,f_notif) != 0) {
     return 1;
   }
-    print_linked_nodes();
 
   pthread_rwlock_unlock(&kvs_table->tablelock);
   return 0;

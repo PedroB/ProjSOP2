@@ -85,7 +85,12 @@ static int entry_files(const char *dir, struct dirent *entry, char *in_path,
 void apanha_usr1(){
   sessionProtoMessage sessionMessage;
   sessionMessage.opcode = '1';
-  write(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
+  ssize_t n = write(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage));
+  
+  if (n != sizeof(sessionMessage)) {
+    exit(1);
+  }
+
   signal (SIGUSR1, apanha_usr1);
 }
 
@@ -101,80 +106,26 @@ void *main_Thread() {
   pthread_mutex_unlock(&mutexBuffer);
 
     while (1) {
-        // ssize_t n = read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
-
-    // printf("Raw data READ (%zd bytes):\n", bytes_read);
-    // for (ssize_t i = 0; i < bytes_read; i++) {
-    //     printf("%02x ", ((unsigned char *)&sessionMessage)[i]);
-    // }
-    // printf("\n");
-
-      //  ssize_t result = read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
-      //  printf("Result of read_all: %zd\n", result);
-
+      
       read_all(f_server, (void *)&sessionMessage, sizeof(sessionProtoMessage), NULL);
-
-  
-
-        // if (n != sizeof(sessionMessage)) {
-        //     exit(1);
-        // }
-
-
-        // if (sessionMessage.opcode == '0') {
-        // pthread_mutex_lock(&mutexBuffer);
-        // sem_wait(&semEmpty); // Espera que haja espaço no buffer
-        
 
       // Adiciona o item ao buffer
       pthread_mutex_lock(&mutexBuffer);
       while (count == MAX_BUFFER_SIZE) pthread_cond_wait(&podeProd,&mutexBuffer);
       memcpy(&buf[prodptr], &sessionMessage, sizeof(sessionProtoMessage));
-            // printf("este é o opcdoe: %c\n", buf[count].opcode);
 
-      // printf("count = %d\n", count);
       prodptr++; if(prodptr==MAX_BUFFER_SIZE) prodptr = 0;
       count++;
       pthread_cond_signal(&podeCons);
       pthread_mutex_unlock(&mutexBuffer);
 
-
-
-      // count++;
-        // pthread_mutex_unlock(&mutexBuffer); // Sai da seção crítica
-        // sem_post(&semFull); // Indica que há um item disponível no buffer
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
 int write_to_resp_pipe(int f_pipe, char op_code, char result) {
 
-    // char msg[MAX_STRING_SIZE];
-
-    // snprintf(msg, MAX_STRING_SIZE, "%c%c", op_code, result);
-
-        const char msg[2] = {op_code, result};
-
-    // int msg_len = snprintf(msg, sizeof(msg), "%c%c", op_code, result);
-      // snprintf(msg, sizeof(msg), "%c%c", op_code, result);
-
-
-    // Check if snprintf succeeded
-    // if (msg_len < 0 || (size_t)msg_len >= sizeof(msg)) {
-    //     fprintf(stderr, "Error: message too large or formatting failed\n");
-    //     close(f_pipe);
-    //     return -1;
-    // }
-
-    // ssize_t n = write_all(f_pipe, msg,(size_t) 2);
-    // write_all(f_pipe, msg,(size_t) 2);
+    const char msg[2] = {op_code, result};
         write(f_pipe, msg, 2);
-
-
-    // if (n != msg_len) {
-    //     perror("Error writing to named pipe");
-    //     close(f_pipe);
-    //     return -1;
-    // }
 
     close(f_pipe);
 
@@ -191,9 +142,7 @@ void *manager_thread(){
   char key[MAX_STRING_SIZE];
 
   while(1){
-    // pthread_mutex_lock(&mutexBuffer);
-    // sem_wait(&semFull);
-    
+   
     pthread_mutex_lock(&mutexBuffer);
     while (count == 0) pthread_cond_wait(&podeCons,&mutexBuffer);
     memcpy(&sessionMessage, &buf[consptr], sizeof(sessionProtoMessage));
@@ -203,10 +152,6 @@ void *manager_thread(){
     pthread_cond_signal(&podeProd);
     pthread_mutex_unlock(&mutexBuffer);
 
-    // count--;
-    // pthread_mutex_unlock(&mutexBuffer);
-    // sem_post(&semEmpty);
-
     memset(req_pipe_path,0,MAX_BUFFER_SIZE+1);
     memset(resp_pipe_path,0,MAX_BUFFER_SIZE+1);
     memset(notif_pipe_path,0,MAX_BUFFER_SIZE+1);
@@ -214,18 +159,12 @@ void *manager_thread(){
     strncpy(resp_pipe_path,sessionMessage.resp_pipe_path,MAX_BUFFER_SIZE);
     strncpy(notif_pipe_path,sessionMessage.notif_pipe_path,MAX_BUFFER_SIZE);
 
-    // if ((f_resp = open (resp_pipe_path, O_WRONLY)) < 0) exit(1);
       if ((f_resp = open (sessionMessage.resp_pipe_path, O_WRONLY)) < 0) exit(1);
     // const char *message = "11"; 
     const char message[2] = {'1', '1'};
-    // ssize_t n = write_all(f_resp, message, strlen(message)); // Write the string to the pipe
-    // write_all(f_resp, message, 2); 
+  
   write(f_resp, message, 2);
     
-
-    // if (n != (ssize_t)strlen(message)) {
-    //   exit(1);
-    // }
 
     if ((f_req = open (sessionMessage.req_pipe_path, O_RDONLY)) < 0) exit(1);
     
@@ -257,7 +196,6 @@ void *manager_thread(){
             break;
 
         case CMD_SUBSCRIBE:
-            puts("\ncomando server subscribe\n");
             // Lê a chave associada ao comando do pipe
             memset(key, 0, MAX_STRING_SIZE); 
             if (read(f_req, key, MAX_STRING_SIZE) <= 0) {
@@ -283,7 +221,6 @@ void *manager_thread(){
             if (read(f_req, key, MAX_STRING_SIZE) <= 0) {
                 result = 1; // Erro ao ler a chave
             } else {
-              puts("VAI AGORA CHAMAR UNSUBSCRIBE");
                 if (kvs_subs_or_unsubs(key, f_notif, OP_CODE_UNSUBSCRIBE) != 0) {
                     result = '0';
                     char msg[2];
@@ -330,7 +267,7 @@ static int run_job(int in_fd, int out_fd, char *filename) {
       if (kvs_write(num_pairs, keys, values)) {
         write_str(STDERR_FILENO, "Failed to write pair\n");
       }
-      sleep(30);
+      sleep(10);
     
       break;
 
@@ -530,16 +467,13 @@ static void dispatch_threads(DIR *dir, char *reg_pipe_path) {
   
   // ler do FIFO de registo
 
-  // char reg_pipe_path[256] = "/tmp/reg";
       unlink(reg_pipe_path);
-  // strncat(reg_pipe_path, argv[4], strlen(argv[4]) * sizeof(char));
     if (mkfifo (reg_pipe_path, 0777) < 0)
     exit (1);
       
     if ((f_server = open (reg_pipe_path, O_RDWR)) < 0) exit(1);
 
 
-// pthread_t manager_thread[MAX_SESSION_COUNT];
     if (pthread_create(&main_thread, NULL, main_Thread, NULL) != 0) {
         fprintf(stderr, "Erro ao criar thread");
         exit(EXIT_FAILURE);
@@ -646,6 +580,7 @@ int main(int argc, char **argv) {
   close(f_server);
 
   kvs_terminate();
+  //FINISHED
 
   return 0;
 }
